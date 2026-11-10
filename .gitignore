@@ -1,0 +1,32 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Environment (never commit real credentials; .env.example is committed)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+*.log
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# BMAD personal install answers (team config lives in _bmad/config.toml and _bmad/custom/config.toml)
+_bmad/config.user.toml
