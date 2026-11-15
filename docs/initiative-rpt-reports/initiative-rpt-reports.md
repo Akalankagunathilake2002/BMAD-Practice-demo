@@ -9,6 +9,7 @@ sources:
 companions:
   - docs/initiative-rpt-reports/prd-rpt-2026-11-15/prd-rpt-2026-11-15.md
   - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md
+  - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md
   - docs/initiative-rpt-reports/prd-rpt-2026-11-15/addendum.md
 after: []
 risk: low
@@ -59,7 +60,8 @@ A finance colleague opens the exported CSVs, sums them and gets exactly the tota
 - parent — docs/initiative-carbontrack/initiative-carbontrack.md, Requirements R41–R45
 - prd — docs/initiative-rpt-reports/prd-rpt-2026-11-15/prd-rpt-2026-11-15.md, §4 Features (adopted companion: each FR's testable consequences)
 - addendum — docs/initiative-rpt-reports/prd-rpt-2026-11-15/addendum.md, Architecture notes
-- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, §11.1 Ownership
+- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, AD-1–AD-18 (the contract; AD-2 ownership, AD-17 seams)
+- architecture detail — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md, for anything no AD covers
 
 ## Notes
 

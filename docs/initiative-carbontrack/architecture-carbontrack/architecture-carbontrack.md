@@ -1,735 +1,300 @@
 ---
-type: architecture
-title: "CarbonTrack — Master Architecture"
-created: 2026-11-10
+name: 'CarbonTrack'
+type: architecture-spine
+purpose: build-substrate
+altitude: initiative
+paradigm: 'layered modular monolith'
+scope: 'The CarbonTrack parent initiative and its six child initiatives (M0–M5): one FastAPI backend, one React single-page app, one PostgreSQL database, run locally with Docker Compose'
+status: final
+created: '2026-11-15'
+updated: '2026-11-15'
+binds: [R1-R45, M0, M1, M2, M3, M4, M5]
+sources:
+  - docs/initiative-carbontrack/initiative-carbontrack.md
+  - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md
+  - docs/initiative-plt-platform-foundation/prd-plt-2026-11-14/addendum.md
+  - docs/initiative-org-company-management/prd-org-2026-11-15/addendum.md
+  - docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/addendum.md
+  - docs/initiative-act-activity-data/prd-act-2026-11-15/addendum.md
+  - docs/initiative-dsh-dashboard/prd-dsh-2026-11-15/addendum.md
+  - docs/initiative-rpt-reports/prd-rpt-2026-11-15/addendum.md
 ---
 
-# CarbonTrack — Master Architecture
+# Architecture Spine — CarbonTrack
 
-| | |
-|---|---|
-| Version | 0.2 |
-| Date | 2026-11-10 |
-| Status | **Approved at Checkpoint 2** (2026-11-10). v0.2 adds mock login (Q-02) and the BMAD folder layout (Q-01) |
-| Inputs | [Master PRD](../prd-carbontrack/prd-carbontrack.md) · [Project brief](../project-brief/project-brief.md) |
+This spine is the contract. The CP2 architecture, [architecture-carbontrack-detail.md](architecture-carbontrack-detail.md), stays beside it as the reference for anything no AD covers; where the two disagree, this spine wins.
 
-## 1. Architectural drivers
+## Design Paradigm
 
-| Driver | Source | Architectural response |
-|---|---|---|
-| Explainable, reproducible calculations | BR-03, FR-EMI-02/03 | Immutable, versioned factors. Calculation rows snapshot the quantity and factor value used, and history is kept |
-| Exact arithmetic | NFR-01 | `Decimal` in Python, `NUMERIC` in PostgreSQL, and rounding in exactly one place (the engine) |
-| Business logic kept out of HTTP endpoints | Requirements §5 | Thin routes → services → pure calculation engine |
-| Factors configurable without code changes | BR-06, FR-EMI-07 | Factors stored in the database, seeded from a JSON file, new versions added through the API |
-| Fast aggregates for dashboard and reports | NFR-02 | Aggregation in SQL over indexed columns, not in Python loops |
-| One-command local run with no hardcoded secrets | FR-PLT-05, NFR-06 | Docker Compose plus `.env`, with settings loaded by pydantic-settings |
-| Professional, consistent UI | G3 | Design tokens in the Tailwind theme, a reusable UI kit, and standard loading, empty and error components |
+**Layered modular monolith.** One backend, one frontend, one database. Each module (M0–M5) owns its tables and its slice of every layer; layers depend only downward.
 
-## 2. System context
+| Layer | Backend | Frontend |
+| --- | --- | --- |
+| Entry | `app/api/v1/routes` — HTTP only | `pages/` — one component per route |
+| Behavior | `app/services` — rules, queries, flushes | `hooks/` — TanStack Query hooks, the only callers of services |
+| Core | `app/calculation` — pure emission arithmetic, no I/O | `services/` + `apiClient.ts` — typed API calls, no React |
+| Data / shared | `app/models`, `app/schemas`, `app/db`, `app/core` | `components/ui` (M0), `components/charts` (M4), `components/<feature>` |
 
-```mermaid
-flowchart LR
-    U["User<br/>(web browser)"] -->|loads| FE["Frontend SPA<br/>React + TypeScript + Vite<br/>Tailwind + Recharts"]
-    FE -->|"REST / JSON<br/>/api/v1"| BE["Backend API<br/>FastAPI + Pydantic"]
-    BE -->|SQLAlchemy ORM| DB[("PostgreSQL")]
-    BE -.->|serves| SW["Swagger UI /docs<br/>OpenAPI schema"]
-```
+## Invariants & Rules
 
-The single-page app in the browser calls a stateless REST API. The API is the only component that talks to the database.
+### AD-1 — Layers depend only downward [ADOPTED]
 
-## 3. Technology stack
-
-| Layer | Choice | Notes |
-|---|---|---|
-| Frontend | React (current stable major), TypeScript `strict`, Vite | Versions pinned in the lockfile at build time |
-| Styling | Tailwind CSS v4 | Design tokens defined in CSS via `@theme` |
-| Charts | Recharts | Wrapped in project chart components |
-| Routing | React Router \* | Needed for sidebar navigation and URL-scoped organizations |
-| Server state | TanStack Query \* | Caching plus loading, error and retry states |
-| Frontend tests | Vitest, React Testing Library, MSW \* | MSW mocks the API in component tests |
-| Backend | Python 3.12, FastAPI | |
-| Validation | Pydantic v2, pydantic-settings | Request and response schemas, environment-based settings |
-| Mock login | PyJWT, bcrypt † | Signed bearer tokens and password hashing for seeded demo users |
-| ORM | SQLAlchemy 2.0 (synchronous), psycopg 3 | See ADR-01 |
-| Migrations | Alembic \* | See ADR-03 |
-| Backend tests | pytest, httpx (FastAPI TestClient) \* | Real PostgreSQL, see ADR-13 |
-| Lint and format | ruff (Python), ESLint and Prettier (TypeScript) \* | |
-| Database | PostgreSQL 16 with the `btree_gist` extension | `btree_gist` enables the no-overlap constraint on reporting periods |
-| Local runtime | Docker Compose | |
-| CI | GitHub Actions \* | Lint and tests on every push (Q-12) |
-
-\* Addition not named in the requirements. Approved at CP2 (Q-08).
-† Added in v0.2 because of the mock-login decision (Q-02).
-
-## 4. Container view (local)
-
-| Service | Image or build | Port (bound to localhost) | Responsibility |
-|---|---|---|---|
-| `db` | `postgres:16-alpine` | 5432 | Data storage, named volume `pgdata`, `pg_isready` health check |
-| `backend` | `./backend/Dockerfile` | 8000 | On start: `alembic upgrade head`, then `python -m app.seed` (idempotent, controlled by `SEED_DEMO_DATA`), then `uvicorn --reload` |
-| `frontend` | `./frontend/Dockerfile` | 5173 | Vite dev server with hot reload |
-
-`backend` waits for `db` to be healthy. Source folders are bind-mounted for hot reload during development.
-
-## 5. Request flow: recording an activity
-
-```mermaid
-sequenceDiagram
-    participant UI as ActivityForm (React)
-    participant API as POST /organizations/{orgId}/activities
-    participant AS as ActivityService
-    participant CS as EmissionCalculationService
-    participant EN as calculation.engine
-    participant DB as PostgreSQL
-    UI->>API: activityType, quantity, unit, activityDate
-    API->>AS: create(org_id, ActivityCreate)
-    AS->>DB: find the reporting period covering activityDate
-    AS->>DB: INSERT activity_records
-    AS->>CS: calculate_for_activity(activity)
-    CS->>DB: SELECT active factor for the activity type
-    CS->>EN: calculate_emissions(quantity, unit, factor)
-    EN-->>CS: CalculationResult
-    CS->>DB: mark previous result not current, INSERT emission_calculations
-    AS->>DB: COMMIT (one transaction)
-    API-->>UI: 201 Created, activity with emissions and factor used
-```
-
-## 6. Backend architecture
-
-### 6.1 Layers and rules
+- **Binds:** all
+- **Prevents:** business rules leaking into routes or pages, and I/O leaking into the calculation engine.
+- **Rule:** A route parses input, calls one service method and returns a schema; it never queries or commits. A service holds rules and queries and flushes; it never commits (AD-4) and never imports FastAPI. The calculation engine imports only the standard library. A page never calls `fetch`; data flows page → hook → service → `apiClient`.
 
 ```mermaid
 flowchart TB
-    R["api/v1/routes<br/>HTTP only"] --> S["services<br/>business rules, queries, transactions"]
-    S --> E["calculation<br/>pure functions, Decimal"]
-    S --> M["models<br/>SQLAlchemy ORM"]
-    R -.-> SC["schemas<br/>Pydantic DTOs"]
+    R["routes"] --> S["services"]
+    S --> E["calculation (pure)"]
+    S --> M["models"]
+    R -.-> SC["schemas"]
     S -.-> SC
     M --> DB[("PostgreSQL")]
 ```
 
-| Layer | Folder | Responsibility | May import | Must not |
-|---|---|---|---|---|
-| Routes | `app/api/v1/routes` | Parse parameters, call one service method, return a response schema, set status codes | schemas, services, `api/deps` | Contain business rules, run queries or commit |
-| Schemas | `app/schemas` | Request and response DTOs, field validation, camelCase aliases | pydantic | Import models or services |
-| Services | `app/services` | Business rules, queries, transactions, cross-module orchestration | models, schemas, calculation, core | Import FastAPI or other HTTP concepts |
-| Calculation engine | `app/calculation` | Deterministic emission arithmetic, activity type and unit definitions | Python standard library only | Perform any I/O |
-| Models | `app/models` | Tables, constraints, relationships | `db/base` | Contain business logic |
-| Core | `app/core` | Settings, domain exceptions, error handlers, logging | | |
-| DB | `app/db` | Engine, session factory, declarative base | `core/config` | |
+### AD-2 — One schema owner and one row writer per table [ADOPTED, amended by Decision A]
 
-### 6.2 Transactions
+- **Binds:** M0–M5, every migration
+- **Prevents:** two modules altering, or writing rows of, the same table in different ways.
+- **Rule:** Schema owners (migrations, models, constraints, indexes): M0 `users`; M1 `organizations`, `reporting_periods`; M3 `activity_records`, `emission_factors`, `emission_calculations`. Each table's rows are written only by its schema owner's services, with one exception: `activity_records` rows are inserted, updated and deleted only by `ActivityService` (M2). `EmissionCalculationService` writes only `emission_calculations`, and `EmissionFactorService` only `emission_factors`. M3 builds no activity write path in `app/`; its tests create activity rows through a test-only factory in `backend/tests/factories.py` that app code never imports. M3's migrations include the indexes `activity_records (organization_id, activity_date, id)`, `activity_records (reporting_period_id, activity_type)` and `emission_calculations (activity_record_id) WHERE is_current`. A module that needs another index on a table it does not own asks the owner for it; it never alters that table.
 
-One SQLAlchemy session per request, provided by a FastAPI dependency. A write service method commits once at the end of its work, and any exception rolls the transaction back. An activity write and its calculation share one transaction, so an activity never exists without a current calculation.
+### AD-3 — Cross-module calls follow one acyclic service graph [ADOPTED, amended]
 
-### 6.3 Error handling
-
-Services raise domain exceptions. Exception handlers registered in `main.py` translate them into a single error envelope:
-
-```json
-{
-  "error": {
-    "code": "ACTIVITY_DATE_OUTSIDE_PERIODS",
-    "message": "No reporting period covers 2026-03-14 for this organization.",
-    "details": [{ "field": "activityDate", "issue": "outside_reporting_periods" }],
-    "requestId": "b7e2…"
-  }
-}
-```
-
-| Exception | HTTP status | Example codes |
-|---|---|---|
-| `AuthenticationError` | 401 | `INVALID_CREDENTIALS`, `TOKEN_MISSING`, `TOKEN_EXPIRED` |
-| `NotFoundError` | 404 | `ORGANIZATION_NOT_FOUND`, `ACTIVITY_NOT_FOUND` |
-| `ConflictError` | 409 | `ORGANIZATION_NAME_TAKEN`, `REPORTING_PERIOD_OVERLAP` |
-| `BusinessRuleError` | 422 | `ACTIVITY_DATE_OUTSIDE_PERIODS`, `NO_ACTIVE_FACTOR`, `UNIT_MISMATCH` |
-| Pydantic `RequestValidationError` | 422 | `VALIDATION_ERROR`, with per-field details |
-| Anything unhandled | 500 | `INTERNAL_ERROR`. Logged with the request ID; the client receives a generic message |
-
-### 6.4 Logging
-
-Structured log lines with a request ID. Middleware reads or creates an `X-Request-ID` header and returns it on every response, so a UI error can be matched to a log line.
-
-### 6.5 Mock authentication (Q-02)
-
-```mermaid
-sequenceDiagram
-    participant UI as LoginPage
-    participant API as POST /auth/login
-    participant AU as AuthService
-    participant DB as PostgreSQL
-    UI->>API: email, password
-    API->>AU: authenticate(email, password)
-    AU->>DB: SELECT user by lower(email)
-    AU->>AU: bcrypt verify, sign JWT (sub, name, role, exp = 8 h)
-    API-->>UI: accessToken, user
-    UI->>UI: store token, attach "Authorization: Bearer …" to every request
-```
-
-- `core/security.py` holds password hashing and token creation and decoding. The signing secret comes from `AUTH_SECRET_KEY`. HS256 is used, with an 8-hour lifetime and no refresh tokens.
-- `api/deps.get_current_user` decodes the token and loads the user. Every router except `health`, `auth/login` and the docs depends on it (FR-AUTH-05). A missing, invalid or expired token returns 401 through the error envelope.
-- Roles are carried in the token and shown in the UI. No endpoint checks them (FR-AUTH-04).
-- The frontend keeps the token in `localStorage`. `apiClient` attaches it to every request. A 401 response clears the session and redirects to `/login?next=<path>`.
-- Logout happens on the client only (the token is discarded). Because tokens are stateless, a discarded token remains valid until it expires. That is acceptable for a demo.
-
-## 7. Calculation engine
-
-The engine is a pure module with no database, FastAPI or I/O imports, which makes it trivially unit-testable.
-
-```python
-# app/calculation/engine.py (illustrative)
-QUANTUM = Decimal("0.000001")
-
-@dataclass(frozen=True)
-class Factor:
-    activity_type: ActivityType
-    unit: Unit
-    value: Decimal  # kg CO2e per unit
-
-@dataclass(frozen=True)
-class CalculationResult:
-    quantity: Decimal
-    unit: Unit
-    factor_value: Decimal
-    emissions_kg_co2e: Decimal
-
-def calculate_emissions(activity_type: ActivityType, quantity: Decimal,
-                        unit: Unit, factor: Factor) -> CalculationResult:
-    if factor.activity_type != activity_type:
-        raise FactorMismatchError(...)
-    if unit != factor.unit:
-        raise UnitMismatchError(...)  # extension point for unit conversion (Q-05)
-    if quantity <= 0:
-        raise InvalidQuantityError(...)
-    emissions = (quantity * factor.value).quantize(QUANTUM, rounding=ROUND_HALF_UP)
-    return CalculationResult(quantity, unit, factor.value, emissions)
-```
-
-- `app/calculation/activity_types.py` is the single source of truth for activity types, their canonical units and scope labels. Schemas, services and the reference-data endpoint all read from it.
-- **Factor lifecycle.** Adding version *n+1* for a type deactivates the current version and inserts the new one in a single transaction. A partial unique index guarantees at most one active factor per type. Factor values are never updated.
-- **Recalculation (FR-EMI-10).** For each of the organization's activities whose current result used a non-active factor, mark that result not current and insert a new one.
-- **Aggregation** happens in SQL in `EmissionsQueryService`: `SUM(emissions_kg_co2e)` over current results, grouped by `activity_type` and `date_trunc('month', activity_date)`.
-
-## 8. Data architecture
-
-### 8.1 Entity relationships
-
-```mermaid
-erDiagram
-    organizations ||--o{ reporting_periods : defines
-    organizations ||--o{ activity_records : owns
-    reporting_periods ||--o{ activity_records : groups
-    activity_records ||--o{ emission_calculations : "has history of"
-    emission_factors ||--o{ emission_calculations : "applied in"
-
-    users {
-        uuid id PK
-        varchar email
-        varchar display_name
-        varchar role
-        varchar password_hash
-    }
-    organizations {
-        uuid id PK
-        varchar name
-        varchar industry
-        char country_code
-        timestamptz created_at
-        timestamptz updated_at
-    }
-    reporting_periods {
-        uuid id PK
-        uuid organization_id FK
-        varchar name
-        date start_date
-        date end_date
-    }
-    activity_records {
-        uuid id PK
-        uuid organization_id FK
-        uuid reporting_period_id FK
-        varchar activity_type
-        numeric quantity
-        varchar unit
-        date activity_date
-        varchar description
-    }
-    emission_factors {
-        uuid id PK
-        varchar activity_type
-        varchar unit
-        numeric value
-        int version
-        boolean is_active
-        varchar source_label
-    }
-    emission_calculations {
-        uuid id PK
-        uuid activity_record_id FK
-        uuid emission_factor_id FK
-        numeric quantity_used
-        numeric factor_value_used
-        numeric emissions_kg_co2e
-        boolean is_current
-        timestamptz calculated_at
-    }
-```
-
-### 8.2 Tables
-
-Every table has a `UUID` primary key `id`. Mutable tables also have `created_at` and `updated_at` (`TIMESTAMPTZ`, UTC).
-
-**users** (added in v0.2 for mock login; no foreign keys to business tables)
-
-| Column | Type | Constraints |
-|---|---|---|
-| email | `VARCHAR(254)` | NOT NULL, unique index on `lower(email)` |
-| display_name | `VARCHAR(100)` | NOT NULL |
-| role | `VARCHAR(32)` | NOT NULL, CHECK in ('sustainability_manager', 'data_contributor', 'executive_viewer', 'administrator') |
-| password_hash | `VARCHAR(100)` | NOT NULL, bcrypt hash |
-
-**organizations**
-
-| Column | Type | Constraints |
-|---|---|---|
-| name | `VARCHAR(200)` | NOT NULL, unique index on `lower(name)` |
-| industry | `VARCHAR(100)` | NOT NULL, validated against the predefined list |
-| country_code | `CHAR(2)` | NOT NULL, ISO 3166-1 alpha-2 |
-
-**reporting_periods**
-
-| Column | Type | Constraints |
-|---|---|---|
-| organization_id | `UUID` | FK → organizations, ON DELETE CASCADE |
-| name | `VARCHAR(50)` | NOT NULL, UNIQUE (organization_id, name) |
-| start_date, end_date | `DATE` | NOT NULL, CHECK (end_date >= start_date) |
-
-Also: an EXCLUDE constraint using `btree_gist` on `(organization_id WITH =, daterange(start_date, end_date, '[]') WITH &&)` so an organization's periods cannot overlap, and UNIQUE (id, organization_id) as the target of the composite foreign key below.
-
-**activity_records**
-
-| Column | Type | Constraints |
-|---|---|---|
-| organization_id | `UUID` | NOT NULL, FK → organizations, ON DELETE CASCADE |
-| reporting_period_id | `UUID` | NOT NULL. Composite FK (reporting_period_id, organization_id) → reporting_periods (id, organization_id), ON DELETE RESTRICT, so the period always belongs to the same organization |
-| activity_type | `VARCHAR(32)` | NOT NULL, CHECK in ('electricity', 'fuel', 'business_travel') |
-| quantity | `NUMERIC(18,3)` | NOT NULL, CHECK (quantity > 0) |
-| unit | `VARCHAR(16)` | NOT NULL, CHECK that (activity_type, unit) is a valid pair |
-| activity_date | `DATE` | NOT NULL (the "reporting date", A-05) |
-| description | `VARCHAR(500)` | NULL |
-
-Indexes: (organization_id, activity_date), (reporting_period_id, activity_type).
-
-**emission_factors** (rows are immutable once created)
-
-| Column | Type | Constraints |
-|---|---|---|
-| activity_type | `VARCHAR(32)` | NOT NULL |
-| unit | `VARCHAR(16)` | NOT NULL (the "per unit" of the factor) |
-| value | `NUMERIC(12,6)` | NOT NULL, CHECK (value >= 0), kg CO2e per unit |
-| version | `INTEGER` | NOT NULL, UNIQUE (activity_type, version) |
-| is_active | `BOOLEAN` | NOT NULL. Partial unique index on (activity_type) WHERE is_active |
-| source_label | `VARCHAR(200)` | NOT NULL, default "Demonstration value, not an official emission factor" |
-
-**emission_calculations**
-
-| Column | Type | Constraints |
-|---|---|---|
-| activity_record_id | `UUID` | NOT NULL, FK → activity_records, ON DELETE CASCADE |
-| emission_factor_id | `UUID` | NOT NULL, FK → emission_factors, ON DELETE RESTRICT |
-| quantity_used | `NUMERIC(18,3)` | NOT NULL, snapshot of the activity quantity |
-| factor_value_used | `NUMERIC(12,6)` | NOT NULL, snapshot of the factor value |
-| emissions_kg_co2e | `NUMERIC(20,6)` | NOT NULL |
-| is_current | `BOOLEAN` | NOT NULL. Partial unique index on (activity_record_id) WHERE is_current |
-| calculated_at | `TIMESTAMPTZ` | NOT NULL |
-
-### 8.3 Migrations and seed data
-
-- Alembic manages the schema. `create_all` is never used outside tests. The first migration enables `btree_gist`.
-- `python -m app.seed` is idempotent. It inserts version 1 of each factor from `app/seed/emission_factors.json` when no factor exists for that type. If `SEED_DEMO_DATA=true`, it then creates the four demo users (one per persona, sharing the password from `DEMO_USER_PASSWORD`) and fictional demo organizations with 18 months of activity (Q-14).
-
-## 9. API design
-
-### 9.1 Conventions
-
-- Base path `/api/v1`. Plural resource names, kebab-case paths. Organization-scoped resources are nested under `/organizations/{orgId}`.
-- JSON bodies use camelCase through a Pydantic alias generator. Python code stays snake_case.
-- Decimal values are serialized as JSON numbers at a fixed precision. All arithmetic happens on the server, and the client only formats values (ADR-09).
-- Dates are `YYYY-MM-DD`. Timestamps are ISO 8601 in UTC.
-- Pagination: `?page=1&pageSize=25` (maximum 100) returns `{ items, page, pageSize, total }`. Sorting: `?sort=-activityDate`.
-- Status codes: 200, 201 with `Location`, 204 for deletes, and 404, 409, 422 or 500 using the error envelope (§6.3).
-- OpenAPI is generated by FastAPI, with summaries, descriptions and examples on every route. Swagger UI is at `/docs`.
-
-### 9.2 Endpoints
-
-| Method | Path | Purpose | FR | Module |
-|---|---|---|---|---|
-| GET | `/health` | API and database status (no token needed) | PLT-03 | M0 |
-| POST | `/auth/login` | Exchange email and password for a token and user profile (no token needed) | AUTH-01 | M0 |
-| GET | `/auth/me` | Current user, used to restore a session on reload | AUTH-03 | M0 |
-| GET | `/reference-data` | Activity types (unit, scope), industries, countries | PLT-06 | M0 |
-| GET | `/organizations` | List organizations | ORG-02 | M1 |
-| POST | `/organizations` | Create an organization with its first reporting period | ORG-01 | M1 |
-| GET | `/organizations/{orgId}` | Details and headline figures | ORG-03 | M1 |
-| PATCH | `/organizations/{orgId}` | Update the profile | ORG-04 | M1 |
-| GET | `/organizations/{orgId}/reporting-periods` | List periods | ORG-05 | M1 |
-| POST | `/organizations/{orgId}/reporting-periods` | Add a period | ORG-05 | M1 |
-| PATCH | `/organizations/{orgId}/reporting-periods/{periodId}` | Edit a period | ORG-05 | M1 |
-| GET | `/organizations/{orgId}/activities` | Filtered, paginated, sorted list with current emissions | ACT-04 | M2 |
-| POST | `/organizations/{orgId}/activities` | Create and calculate | ACT-01–03, EMI-01 | M2 |
-| GET | `/organizations/{orgId}/activities/{activityId}` | Detail, including calculation history | EMI-02/03 | M2 |
-| PATCH | `/organizations/{orgId}/activities/{activityId}` | Update and recalculate | ACT-05 | M2 |
-| DELETE | `/organizations/{orgId}/activities/{activityId}` | Delete | ACT-06 | M2 |
-| GET | `/emission-factors` | Active factors and version history | EMI-07/08 | M3 |
-| POST | `/emission-factors` | Add a new version (deactivates the previous one) | EMI-07 | M3 |
-| GET | `/organizations/{orgId}/emissions/summary?periodId=` | Total and breakdown by type with shares | EMI-04/05, DSH-01/03 | M3 |
-| GET | `/organizations/{orgId}/emissions/monthly?periodId=` | Monthly totals by type | EMI-06, DSH-02 | M3 |
-| POST | `/organizations/{orgId}/emissions/recalculate` | Recalculate with the active factors | EMI-10 | M3 |
-| GET | `/organizations/{orgId}/reports/emissions?periodId=&activityType=` | Summary and line items | RPT-01–03 | M5 |
-| GET | `/organizations/{orgId}/reports/emissions/export?periodId=&activityType=&part=lines\|summary` | CSV download | RPT-04/05 | M5 |
-
-Example activity response:
-
-```json
-{
-  "id": "6f1c…",
-  "organizationId": "a2d9…",
-  "reportingPeriodId": "c41e…",
-  "activityType": "electricity",
-  "quantity": 12400.0,
-  "unit": "kWh",
-  "activityDate": "2026-03-31",
-  "description": "Head office utility bill, March",
-  "emissions": {
-    "emissionsKgCo2e": 6200.0,
-    "calculatedAt": "2026-04-02T09:14:00Z",
-    "factor": {
-      "id": "e07b…",
-      "value": 0.5,
-      "unit": "kWh",
-      "version": 1,
-      "sourceLabel": "Demonstration value, not an official emission factor"
-    }
-  }
-}
-```
-
-## 10. Frontend architecture
-
-### 10.1 Layers
-
-| Folder | Responsibility | Rule |
-|---|---|---|
-| `layouts/` | App shell: sidebar, top bar, organization switcher, content outlet | No data fetching other than the organization list |
-| `pages/` | One component per route. Composes hooks and components | No direct `fetch` calls |
-| `components/ui/` | Reusable, presentational UI kit (Button, Card, StatCard, DataTable, Modal, FormField, Select, Badge, Skeleton, EmptyState, ErrorState, Toast) | Props in, events out, no API knowledge |
-| `components/<feature>/` | Feature components (ActivityForm, ActivityTable, ReportFilters, …) | May use hooks |
-| `components/charts/` | Recharts wrappers with shared tokens, tooltips and an accessible table equivalent | Receive data through props |
-| `hooks/` | TanStack Query hooks per resource (`useActivities`, `useEmissionsSummary`, …) and UI hooks (`useSelectedPeriod`) | The only place that calls services |
-| `services/` | Typed API functions over `apiClient.ts` (base URL from `VITE_API_BASE_URL`, JSON handling, conversion of error envelopes to `ApiError`) | No React imports |
-| `types/` | API and domain TypeScript types | |
-| `utils/` | Formatters (kg and t CO2e, numbers, dates) and the CSV download helper | Pure functions |
-
-Data flow: **page → hook → service → apiClient → API**. Mutations invalidate the related queries, so the dashboard updates after an activity is saved.
-
-### 10.2 Routes
-
-| Path | Page |
-|---|---|
-| `/login` | Sign-in page with the demo accounts listed (public route) |
-| `/` | Redirects to the last-used organization's dashboard, or to `/organizations` |
-| `/organizations` | Organization list and entry point for creating one |
-| `/organizations/new` | Create-organization form (with the first reporting period) |
-| `/organizations/:orgId/dashboard` | Dashboard |
-| `/organizations/:orgId/activities` | Activity table, add and edit dialogs |
-| `/organizations/:orgId/reports` | Reports and export |
-| `/organizations/:orgId/settings` | Organization profile and reporting periods |
-| `/emission-factors` | Factors and version history (global) |
-| `*` | Not found |
-
-Every route except `/login` is wrapped in a `RequireAuth` guard. The organization lives in the URL, and the selected period lives in the query string (`?period=<id>`). Views can therefore be linked and bookmarked, and the dashboard and reports share the same selection. The last-used organization ID is remembered in `localStorage`.
-
-### 10.3 UI state pattern
-
-Every data-driven view goes through the same states: skeleton while loading, an error panel with a message and Retry, an empty state with a primary action, then content. Forms show field-level errors from client validation and from the API's `details`. The server remains the authority on validation.
-
-### 10.4 Design system hook-in
-
-Colours (brand greens, neutrals, semantic colours, one chart colour per activity type), typography, spacing, radius and shadows are design tokens in `src/styles/index.css` (Tailwind v4 `@theme`). The UX phase (CP4) defines the actual values. Components use only tokens, never raw hex values.
-
-## 11. Module boundaries and dependencies
-
-### 11.1 Ownership
-
-| Module | Owns tables | Backend | Frontend |
-|---|---|---|---|
-| M0 Platform | users | `core/` (including `security.py`), `db/`, `main.py`, `api/deps.py`, health, auth and reference-data routes, `auth_service`, `seed/` | `layouts/`, `components/ui/`, `components/auth/`, `LoginPage`, `services/apiClient.ts`, `services/authService.ts`, `styles/`, routing |
-| M1 Company | organizations, reporting_periods | `organization_service`, `reporting_period_service`, organization and period routes | Organization pages, `components/organization/` |
-| M2 Activity | activity_records | `activity_service`, activity routes | `ActivitiesPage`, `components/activities/` |
-| M3 Emissions | emission_factors, emission_calculations | `calculation/`, `emission_factor_service`, `emission_calculation_service`, `emissions_query_service`, factor and emissions routes | `EmissionFactorsPage`, `components/emissions/` |
-| M4 Dashboard | none | none (reads M3 endpoints) | `DashboardPage`, `components/charts/`, `components/dashboard/` |
-| M5 Reports | none | `report_service`, report routes | `ReportsPage`, `components/reports/` |
-
-### 11.2 Dependency graph
-
-Arrows mean "depends on".
+- **Binds:** M0–M5 services
+- **Prevents:** circular imports, and two modules each assuming the other owns a rule.
+- **Rule:** These rules govern calls between modules; services within one module may call each other. The only cross-module service calls are: ActivityService (M2) → ReportingPeriodService (M1) and → EmissionCalculationService (M3); EmissionCalculationService → EmissionFactorService and the engine; OrganizationService (M1) → EmissionsQueryService (M3), for headline figures only; ReportService (M5) → EmissionsQueryService and ActivityService. Reading another module's table through its model is allowed only in `ReportingPeriodService` (`activity_records`, for the period-edit guard) and in `EmissionsQueryService` and `ReportService` (`reporting_periods`, `organizations`, for period dates and names), and only for reading. An import-linter contract in CI enforces AD-1 and AD-3.
 
 ```mermaid
 flowchart TD
-    M5["M5 Reports"] --> M2
-    M5 --> M3
-    M5 --> M1
-    M4["M4 Dashboard"] --> M3
+    M5["M5 Reports"] --> M3
+    M5 --> M2
+    M4["M4 Dashboard (UI only)"] --> M3
     M4 --> M1
-    M2["M2 Activity Data"] --> M3
+    M2["M2 Activity data"] --> M3
     M2 --> M1
-    M3["M3 Emissions Calculation"] --> M0
-    M1["M1 Company Management"] --> M0
-    M0["M0 Platform Foundation"]
+    M1["M1 Company"] -->|"headline figures"| M3
+    M3["M3 Emissions"] --> M0
+    M1 --> M0
+    M3 -.->|"read-only: periods, organizations"| M1
+    M1 -.->|"read-only: activity_records (guard)"| M3
+    M0["M0 Platform"]
 ```
 
-Allowed service-to-service calls:
+### AD-4 — The entry point owns the unit of work [ADOPTED, amended]
 
-- `ActivityService` → `ReportingPeriodService` (find the covering period) and `EmissionCalculationService` (calculate on write).
-- `EmissionCalculationService` → `EmissionFactorService` (active factor) and the calculation engine.
-- `ReportService` → `EmissionsQueryService` (aggregates) and `ActivityService` (line items).
+- **Binds:** all write services, the seed, the test fixture; R21, R23, R32
+- **Prevents:** half-applied requests, constraint violations surfacing as 500s, and a half-seeded demo organization.
+- **Rule:** For HTTP, M0's `get_db` opens one session per request, commits once after the route returns, and rolls back on any exception before the error envelope is sent. For the seed, M0's runner opens one session per seed step and commits once per step (AD-15). Services never call `commit()` or `rollback()`; after a write a database constraint guards, they `flush()`, catch `IntegrityError` and raise the domain error. An activity write and its calculation, and a whole recalculation, therefore commit together or not at all. Tests wrap each test in an outer transaction with `join_transaction_mode="create_savepoint"`.
 
-`emission_calculations` has a foreign key to `activity_records`. That is a data-level reference only: M3 services read the `ActivityRecord` model but never call `ActivityService`, which keeps the code dependency graph acyclic.
+### AD-5 — Exact decimals, one set of response types [ADOPTED, amended]
 
-### 11.3 Build order
+- **Binds:** M3, M2, M5, M1, M4; R23–R28, R34–R36, R41–R45; NFR-01
+- **Prevents:** totals and shares that differ between the database, the API, the dashboard and a CSV.
+- **Rule:** Emission arithmetic uses Python `Decimal` and PostgreSQL `NUMERIC`, never binary floating point. Rounding happens only in the engine: emissions to 6 decimals half-up, and shares only in `share(part, total)` in `app/calculation`, a fraction from 0 to 1 at 6 decimals, 0 when the total is 0. Column types: `quantity` and `quantity_used` NUMERIC(13,3); factor `value` and `factor_value_used` NUMERIC(12,6); `emissions_kg_co2e` NUMERIC(22,6); aggregates unbounded NUMERIC. M0's `app/schemas/common.py` defines the only decimal response types — `Quantity` (3 dp), `FactorValue` (6 dp), `KgCo2e` (6 dp), `Share` (6 dp) — each serialized as a JSON number after quantizing; no response schema declares a bare `Decimal`. JSON numbers are exact at 2 decimals below about 9×10¹³ kg and at 6 decimals below about 9×10⁹ kg; CSVs are written on the server from `Decimal` at full stored precision. On the frontend, M0's `utils/format.ts` is the only formatter (`formatKg`, `formatTonnes`, `formatShare` from a fraction to a whole percent), and no page does arithmetic on API figures except kg→t and the previous-period change.
 
-1. **M0** Platform Foundation: compose, settings, DB session, error envelope, mock login, app shell, UI kit.
-2. **M1** Company Management.
-3. **M3a** Emission factors and the pure calculation engine (no dependency on activities).
-4. **M2** Activity Data, together with **M3b** calculation persistence (writing an activity triggers a calculation).
-5. **M3c** Aggregations (summary, monthly).
-6. **M4** Dashboard and **M5** Reports, which can be built in parallel.
+### AD-6 — Factor versions are immutable and global; one disclaimer [ADOPTED, amended]
 
-## 12. Cross-cutting concerns
+- **Binds:** M3, M2, M4, M5; R29–R31
+- **Prevents:** a figure that can no longer be explained, and different disclaimer texts on screens and in files.
+- **Rule:** A factor version is never updated or deleted. Adding one deactivates the active version for that type and inserts the new one in one transaction; a partial unique index allows one active version per type; every version records `created_at`. Factors apply to every organization. `DISCLAIMER` ("Demonstration factors, not official values") and `STANDARD_SOURCE_LABEL` ("Demonstration value, not an official emission factor") are constants in `app/calculation/disclaimer.py` (M3). A source label is the user's source text, then " — ", then `DISCLAIMER`, or `STANDARD_SOURCE_LABEL` when the text is blank; source text is at most 100 characters. `GET /reference-data` returns `disclaimer`; the frontend shows it only through M3's `components/emissions/DisclaimerNote`; the summary CSV's `source` column holds `STANDARD_SOURCE_LABEL`.
 
-### 12.1 Configuration
+### AD-7 — Calculations are snapshots with one current per activity [ADOPTED, amended]
 
-All configuration comes from environment variables. `.env.example` is committed with placeholder values, and `.env` is git-ignored.
+- **Binds:** M3, M2, M5; R21–R25, R32
+- **Prevents:** history overwritten on edit, two current results for one activity, and responses that show calculations in different shapes.
+- **Rule:** Each calculation stores the quantity, factor version and factor value it used. A partial unique index allows one current calculation per activity; earlier ones are kept and never edited. Every saved activity edit creates a new current calculation with the active factor. Totals read current calculations only. Deleting an activity removes its calculations through `ON DELETE CASCADE` on `emission_calculations.activity_record_id`; no service deletes calculations. M3's `schemas/emissions.py` defines `CalculationRead {emissionsKgCo2e, quantityUsed, calculatedAt, factor: FactorRef {id, value, unit, version, sourceLabel, createdAt}}`, and every response that contains a calculation embeds exactly this type.
 
-| Variable | Used by | Example in `.env.example` |
-|---|---|---|
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | db, backend | `carbontrack`, `change-me`, `carbontrack` |
-| `POSTGRES_HOST`, `POSTGRES_PORT` | backend | `db`, `5432` |
-| `TEST_DATABASE_NAME` | backend tests | `carbontrack_test` |
-| `CORS_ORIGINS` | backend | `http://localhost:5173` |
-| `APP_ENV`, `LOG_LEVEL` | backend | `development`, `INFO` |
-| `SEED_DEMO_DATA` | backend | `true` |
-| `AUTH_SECRET_KEY` | backend | `change-me-to-a-long-random-string` |
-| `AUTH_TOKEN_TTL_MINUTES` | backend | `480` |
-| `DEMO_USER_PASSWORD` | backend (seed) | `change-me` |
-| `VITE_API_BASE_URL` | frontend | `http://localhost:8000/api/v1` |
+### AD-8 — An activity's period is derived, never chosen [ADOPTED, amended]
 
-### 12.2 Security (demo level)
+- **Binds:** M0, M1, M2, M3; R16, R18, R19
+- **Prevents:** activities counted in the wrong period or in none, including through concurrent edits.
+- **Rule:** The covering period is found only by `ReportingPeriodService.find_covering(org_id, date)` (M1). `ActivityService` calls it on create and on every date change and raises `ACTIVITY_DATE_OUTSIDE_PERIODS` (422, field `activityDate`) when it finds none. A composite foreign key keeps period and activity in one organization: M1's migration creates `UNIQUE (id, organization_id)` on `reporting_periods` as its target, and M0's first migration enables `btree_gist`. Periods of one organization never overlap (exclusion constraint; refused as 409 `REPORTING_PERIOD_OVERLAP` naming the clashing period) and names are unique on `lower(name)`. A period edit that would leave activities outside the period is refused with 422 `REPORTING_PERIOD_EXCLUDES_ACTIVITIES` and one `details` entry per side, `{field: "startDate"|"endDate", issue: "excludes_activities", count, from, to}`, bounding only the stranded activities on that side. A period edit and every activity save that links a period first lock the period rows involved (`SELECT … FOR UPDATE`).
 
-Mock login (§6.5, ADR-12) keeps casual visitors out, but it is not production security, so compose still binds ports to `127.0.0.1` only. Passwords are stored as bcrypt hashes and the token secret comes from the environment. CORS uses an explicit allowlist. The ORM parameterizes all queries. Every input is validated by Pydantic and by service rules. Error responses never include stack traces or SQL.
+### AD-9 — Aggregates come from one query service, gaps filled once [ADOPTED, amended]
 
-### 12.3 Validation
+- **Binds:** M3, M1, M4, M5; R14, R26–R28, R34–R36, R41, R45; NFR-02
+- **Prevents:** the dashboard, headline figures and reports computing totals, shares or months differently.
+- **Rule:** Every total, share and monthly figure comes from `EmissionsQueryService` (M3), aggregated in SQL over current calculations, filtered by period and an optional activity type, over indexed columns, within NFR-02's 500 ms (p95) at 50,000 activity rows. A month is a `YYYY-MM` string built with `to_char(activity_date, 'YYYY-MM')`, never through a timestamp. A period's months are every calendar month from the month of its start date to the month of its end date inclusive, computed only by `period_months(start, end)` in `app/calculation/periods.py` (M3). Gaps are filled once, on the server: the monthly endpoint and the method `ReportService` calls both return every month of the period with zeros, and the client never fills months. Each month carries all three activity types; with a type filter, the other two are 0.
 
-The same rule can exist in three places, each for a different reason:
+### AD-10 — One API convention [ADOPTED, amended]
 
-| Layer | Purpose |
-|---|---|
-| Client | Instant feedback |
-| Pydantic schema | Shape, types and ranges |
-| Service and database constraint | Business rules (period coverage, uniqueness, overlap) and a final guarantee |
+- **Binds:** all routes and the frontend `services/`
+- **Prevents:** endpoints that page, sort, filter or fail in different shapes.
+- **Rule:** Base path `/api/v1`, plural kebab-case resources, organization-scoped resources under `/organizations/{orgId}`, camelCase JSON, UUID ids. Paged lists accept `page` (≥ 1) and `pageSize` (1–100, default 25; out of range gives 422 `VALIDATION_ERROR`) and return `{items, page, pageSize, total}` through M0's `Page[T]` schema and pagination dependency. The unpaged collections return an object with only an `items` array and are exactly: organizations (by name), an organization's reporting periods (newest start first), emission factors with their history, and one activity's calculation history. Sort keys are camelCase response field names (activities: `activityDate`, `activityType`, `quantity`, `emissionsKgCo2e`; report lines: `activityDate`), `-` for descending, and every sort appends `id` ascending as the final tie-breaker. Filter parameters are named `periodId`, `activityType`, `from` and `to` everywhere; an explicit `from`/`to` overrides `periodId`. Every error is `{"error": {"code", "message", "details": [{"field": <camelCase request field or null>, "issue": <snake_case>, …context}], "requestId"}}`, with status 401 authentication, 404 unknown or other-organization resource, 409 uniqueness, overlap and simultaneous factor adds, 422 validation and business rules, 500 anything else. Codes are members of one enum in `app/core/error_codes.py`, created by M0 and extended by each module. Every response carries `X-Request-ID`.
 
-## 13. Testing strategy
+### AD-11 — Reports are two calls and streamed exports
 
-| Level | Tooling | Scope |
-|---|---|---|
-| Engine unit tests | pytest | Table-driven tests of the three demo factors, rounding, mismatched type or unit, invalid quantity |
-| Service integration tests | pytest with real PostgreSQL | Business rules (period coverage, overlap, factor versioning, recalculation, history), aggregation queries, and credential checks. Each test runs in a rolled-back transaction |
-| API tests | pytest with TestClient | Every endpoint's happy path and main error path, status codes, error envelope shape, and a 401 for protected routes called without a token |
-| Golden dataset | pytest | A fixed dataset with hand-checked expected totals by type and month (NFR-01) |
-| Frontend unit and component tests | Vitest, React Testing Library | Formatters, UI kit components, ActivityForm validation |
-| Page state tests | Vitest, RTL, MSW | Dashboard and Reports loading, empty, error and content states |
-| End-to-end | Out of scope for the MVP | Playwright is a candidate for later |
+- **Binds:** M5, M0; R41–R45
+- **Prevents:** paging line items reloading the summary, and exports that diverge from the screen, break spreadsheets or arrive partial.
+- **Rule:** `GET …/reports/emissions/summary` and `GET …/reports/emissions/lines?page=` are separate; exports stay at `…/reports/emissions/export?part=lines|summary`. Exports are generated on the server and streamed row by row; every text cell starting with `=`, `+`, `-` or `@` is prefixed with an apostrophe; the server aborts the connection on any mid-stream error. The client downloads only through M0's `apiClient.download(path, params)`, which sends the bearer token, reads the whole body, rejects a non-2xx envelope or a truncated body, and takes the file name from `Content-Disposition`. Tokens never go in query strings.
 
-The test database is created and migrated by the pytest session fixture, using the compose PostgreSQL instance.
+### AD-12 — Recalculation is read, then act, on one resource
 
-## 14. Proposed repository structure
+- **Binds:** M3; R32
+- **Prevents:** the count shown to the user and the work done disagreeing in scope.
+- **Rule:** `GET /organizations/{orgId}/emissions/recalculate` returns `{outOfDateCount}`; `POST` on the same resource replaces exactly those calculations and returns `{updatedCount}`.
+
+### AD-13 — Mock sign-in, stateless and unenforced [ADOPTED, amended]
+
+- **Binds:** M0, every router; R7–R11; NFR-06
+- **Prevents:** modules inventing their own auth checks or role rules, and sign-in failing with a 500.
+- **Rule:** Seeded users with bcrypt hashes sign in for an HS256 bearer token valid 8 hours, with no refresh and client-only sign-out. The token's `sub` is the user id as a string; `AUTH_SECRET_KEY` must be at least 32 bytes or the backend refuses to start. A password longer than 72 bytes is refused as `INVALID_CREDENTIALS` before hashing. Every router except health, sign-in and the API docs requires a valid token; roles are labels and no endpoint checks them. Health answers without a token: 200 when API and database are up, 503 when the database is not, with each part's status.
+
+### AD-14 — Shared UI state lives in the address, query keys and shared components [ADOPTED, amended]
+
+- **Binds:** M0, M1, M2, M4, M5 frontends; R13, R37, R38
+- **Prevents:** pages that disagree on the selected organization or period, stale figures after a save, and pages building their own states or colours.
+- **Rule:** The organization is in the URL path. M1 owns `useSelectedPeriod(orgId, {allowAll})`: it reads `?period=`; when absent or not a period of this organization it resolves the default (the period containing today, else the latest `end_date`) and writes it with history replace; `period=all` is valid only where `allowAll` is set (Activities). M0's sidebar links carry the current `period`; the organization switcher drops it. The Activities page address uses exactly `period`, `type`, `from`, `to`, `sort`, `page`, `pageSize` and `add`; `?add=1` is honoured only there, and other pages link to `/organizations/:orgId/activities?add=1&period=<id>`. Server state lives only in TanStack Query under keys built by M0's `hooks/queryKeys.ts`: organization-scoped keys start `['org', orgId]`, global keys `['global', <resource>]`. Writing activities, periods or calculations invalidates `['org', orgId]`; adding a factor version or recalculating invalidates every `['org']` key and `['global', 'emission-factors']`; creating or editing an organization invalidates `['global', 'organizations']` and `['org', orgId]`. Every data view uses M0's shared loading, error and empty components; every chart uses M4's chart components, each with a table equivalent. Colour token names are fixed now and CP4 sets their values: `--color-activity-electricity`, `--color-activity-fuel`, `--color-activity-business-travel`; no component uses a raw colour.
+
+### AD-15 — One ordered, idempotent seed and one home per reference list
+
+- **Binds:** M0, M1, M2, M3; R4, R6, R10, R12, R33
+- **Prevents:** demo data the app would refuse, seeds that re-create renamed or deleted data, and different spellings of the same value across modules.
+- **Rule:** M0's `app/seed/__main__.py` runs an ordered registry of steps: `users` (M0), `factors` (M3), `demo_data` (M2). Each step is `run(session, settings)` in its owner's `app/seed/<step>.py`, writes through the owning services (demo activities through `ActivityService.create`) and commits once (AD-4). Existence keys: users by `lower(email)`; factors by "this activity type has any version"; demo data by a fixed UUID per demo organization — when it exists the step skips that organization and everything under it, otherwise it creates the organization, its periods and its activities in one transaction. Steps never update or recreate rows they find. `factors` always runs; `users` and `demo_data` run only when `SEED_DEMO_DATA` is true. Reference lists are constants with one owner each: activity types `electricity | fuel | business_travel` with units `kWh | L | km` and scope labels `Scope 2 | Scope 1 | Scope 3` in `app/calculation/activity_types.py` (M0 creates it, M3 adds the scope labels); industries in `app/core/reference/industries.py` (M1); countries (ISO 3166-1 alpha-2, English names) in `app/core/reference/countries.py` (M0). These exact strings are the values in the database, JSON, query parameters, URLs and CSVs; only display labels differ.
+
+### AD-16 — Configuration only from the environment [ADOPTED, amended]
+
+- **Binds:** all; NFR-06, NFR-10
+- **Prevents:** secrets or machine-specific values in committed files, and dev servers unreachable from the host.
+- **Rule:** Every setting comes from environment variables; `.env.example` holds placeholders only, `.env` is never committed, and nothing falls back to a committed secret. Inside their containers the dev servers bind `0.0.0.0`; Compose publishes every port on `127.0.0.1` only. `CORS_ORIGINS` lists both `http://localhost:5173` and `http://127.0.0.1:5173`.
+
+### AD-17 — Cross-module deliveries go through seams the owner leaves
+
+- **Binds:** M0, M1, M2, M3; R1, R6, R10, R14, R16
+- **Prevents:** a later module rebuilding, or editing at will, code another module owns when Decision B moves a deliverable after its owner.
+- **Rule:** A module edits another module's code only at a seam named here; the owner creates the seam when it is built, and the later module fills only that seam.
+  - M1's `OrganizationDetail` has `headline: HeadlineFigures | None`. `OrganizationService.get` fills it by calling `EmissionsQueryService.headline(org_id)` once M3 exists. M3 supplies `HeadlineFigures {activityCount, totalEmissionsKgCo2e}` and the `HeadlineFigures` component, which M1's details page renders in a reserved slot. `GET /organizations` never carries headline figures.
+  - M1's `ReportingPeriodService.update` calls a private `_check_activities_inside(period, start, end)` that M1 ships as a no-op; M2 implements it as a read-only query on `activity_records`. M1's period form renders `REPORTING_PERIOD_EXCLUDES_ACTIVITIES` from the start (AD-8).
+  - M0's `ReferenceData` schema has `activityTypes`, `industries`, `countries`, `disclaimer` and `today` from the start, each filled from its owner's constant (AD-6, AD-15).
+  - M0's sidebar entries are a list in `layouts/navigation.ts` with an `enabled` flag; M3 enables Emission Factors.
+  - The seed registry (AD-15).
+
+### AD-18 — Local operations and CI
+
+- **Binds:** M0, M3; R4, R5; NFR-02, NFR-08, NFR-10
+- **Prevents:** a backend that serves after a failed migration, colliding migration histories, and each module building its own performance data or CI.
+- **Rule:**
+  - The backend starts with `alembic upgrade head && python -m app.seed && uvicorn`; any failure exits non-zero, and the service has `restart: "no"`.
+  - Alembic keeps one linear history; revision files are prefixed by module (`m0_`, `m1_`, `m3_`) and each `down_revision` is the current head.
+  - The reset is `docker compose down -v`, documented in the README.
+  - Tests use the database `${POSTGRES_DB}_test`, created and migrated by M0's session fixture.
+  - M3 owns `backend/tests/perf/make_dataset.py`: 50,000 activities in one organization and one 12-month period, all types, with current calculations; M4's and M5's performance checks reuse it.
+  - CI on GitHub Actions (`actions/checkout@v7`, `actions/setup-node@v7` with Node 26, `actions/setup-python@v7` with Python 3.12) runs a `postgres:16-alpine` service and, on every push: ruff, import-linter, pytest with the coverage gate, ESLint, Prettier check, `tsc --noEmit` and Vitest.
+
+## Consistency Conventions
+
+| Concern | Convention |
+| --- | --- |
+| Naming | Python snake_case; JSON camelCase via aliases; URL paths kebab-case and plural; error codes UPPER_SNAKE in one enum (AD-10); enum values as fixed in AD-15 |
+| Ids, dates, times | UUID keys; dates `YYYY-MM-DD` with no time zone; timestamps ISO 8601 in UTC; months `YYYY-MM` |
+| Today | The server's date in `APP_TIMEZONE` (default UTC); `GET /reference-data` returns it as `today`, and the frontend uses it for validation and defaults |
+| Units and figures | One canonical unit per activity type (kWh, L, km); emissions stored in kg CO2e to 6 decimals; tables show kg to 2 decimals, cards t to 2 decimals, shares whole percent (AD-5) |
+| Errors and logging | Services raise domain exceptions with camelCase field names; handlers map them to the envelope (AD-10); structured logs carry the request ID; no stack trace or SQL reaches a client |
+| Testing | Engine unit tests; service and API tests against real PostgreSQL in savepoint-wrapped transactions (AD-4) using FastAPI's TestClient on `httpx2`; frontend Vitest with `environment: 'jsdom'` and a setup file loading jest-dom; at least 80% line coverage on `services/` and `calculation/` (pytest-cov); test names cite story ids (NFR-08, NFR-11) |
+| Quality gates | ruff, import-linter (AD-3), ESLint flat config with typescript-eslint, Prettier; TypeScript strict; all run in CI (AD-18) |
+| Documentation | OpenAPI generated by FastAPI with a summary, description and example on every route; README setup and reset steps kept current (NFR-09) |
+| Routing imports | All frontend routing imports come from `react-router` (React Router 8 publishes no `react-router-dom`) |
+
+## Stack
+
+Verified on 2026-11-15 against npm, PyPI, Docker Hub, endoflife.date and GitHub releases, including peer-dependency ranges and Node engine ranges; exact patches and evidence are in the memlog and `reviews/review-versions.md`.
+
+| Name | Version |
+| --- | --- |
+| Python (security fixes only, EOL 2028-10; kept from CP2) | 3.12 |
+| Node.js LTS | 26 |
+| FastAPI (with Starlette 1.10) | 0.163 |
+| Pydantic / pydantic-settings | 2.14 / 2.16 |
+| SQLAlchemy (synchronous, 2.0-style API) | 2.1 |
+| psycopg (`psycopg[binary]`) | 3.3 |
+| Alembic | 1.20 |
+| PyJWT / bcrypt | 2.15 / 5.0 |
+| uvicorn | 0.54 |
+| pytest / pytest-cov / httpx2 | 9.2 / 7.1 / 2.16 |
+| ruff / import-linter | 0.17 / 2.16 |
+| PostgreSQL (with `btree_gist`) | 16 |
+| React / React DOM / react-is | 19.3 |
+| @types/react / @types/react-dom | 19.3 |
+| TypeScript | 6.0 |
+| Vite / @vitejs/plugin-react | 8.3 / 6.3 |
+| Tailwind CSS / @tailwindcss/vite | 4.3 |
+| Recharts | 3.10 |
+| react-router | 8.5 |
+| TanStack Query | 5.107 |
+| Vitest / jsdom | 5.1 / 31 |
+| @testing-library/react / dom / jest-dom / user-event | 16.3 / 10.4 / 7.0 / 14.6 |
+| MSW | 3.0 |
+| ESLint / @eslint/js / typescript-eslint / eslint-plugin-react-hooks | 10.15 / 10.0 / 8.72 / 7.1 |
+| Prettier | 3.10 |
+| Base images | `python:3.12-slim`, `node:26-alpine`, `postgres:16-alpine` |
+| GitHub Actions | checkout v7.0, setup-node v7.1, setup-python v7.1 |
+
+## Structural Seed
+
+Deployment is local only: three Compose services on one machine, ports published on `127.0.0.1`.
+
+```mermaid
+flowchart LR
+    B["Browser"] -->|"localhost:5173"| FE["frontend<br/>Vite dev server, binds 0.0.0.0"]
+    FE -->|"REST /api/v1<br/>localhost:8000"| BE["backend<br/>FastAPI + uvicorn, binds 0.0.0.0"]
+    BE -->|"on start: migrate, seed (AD-18)"| DB[("db<br/>PostgreSQL 16<br/>localhost:5432")]
+```
+
+```mermaid
+erDiagram
+    users
+    organizations ||--o{ reporting_periods : defines
+    organizations ||--o{ activity_records : owns
+    reporting_periods ||--o{ activity_records : contains
+    activity_records ||--o{ emission_calculations : "has history of"
+    emission_factors ||--o{ emission_calculations : "applied in"
+```
+
+**Frontend scaffold:** `npm create vite@9 -- --template react-ts`, then set TypeScript to `~6.0.3`, remove the template's oxlint, and add the ESLint flat config (`@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals`) and Prettier. A `.nvmrc` pins Node 26.
 
 ```text
-BMAD-Practice-demo/
-├── README.md                          # setup and run instructions (Build phase)
-├── docker-compose.yml
-├── .env.example                       # every variable, placeholder values only
-├── .gitignore
-├── .github/workflows/ci.yml           # lint and tests (Q-12)
-├── _bmad/                             # BMAD Method v6.12.4 install: config, scripts, manifests
-├── .claude/skills/                    # BMAD agents and workflows as Claude Code skills
-├── docs/                              # BMAD output folder
-│   ├── README.md                      # index, workflow status, approval log
-│   ├── analysis/
-│   │   └── project-brief.md
-│   ├── planning/                      # BMAD planning_artifacts
-│   │   ├── .memlog.md                 # BMAD decision trail (append-only)
-│   │   ├── prd.md
-│   │   ├── architecture.md
-│   │   ├── assumptions-and-open-questions.md
-│   │   ├── modules/                   # m0-platform-prd.md … m5-reports-prd.md (CP3)
-│   │   ├── ux-design-specification.md # plus design-system docs (CP4)
-│   │   └── epics.md                   # epics and stories (CP5)
-│   └── implementation/                # BMAD implementation_artifacts
-│       ├── sprint-status.yaml         # story tracking
-│       ├── stories/                   # one file per story
-│       └── reviews/                   # code reviews, retrospectives, course corrections
-├── backend/
-│   ├── Dockerfile
-│   ├── pyproject.toml
-│   ├── alembic.ini
-│   ├── alembic/
-│   │   ├── env.py
-│   │   └── versions/
-│   ├── app/
-│   │   ├── main.py                    # app factory: routers, middleware, error handlers
-│   │   ├── core/
-│   │   │   ├── config.py              # pydantic-settings, reads environment variables
-│   │   │   ├── security.py            # password hashing, token signing and decoding
-│   │   │   ├── exceptions.py          # domain exceptions
-│   │   │   ├── error_handlers.py      # exception → error envelope
-│   │   │   └── logging.py
-│   │   ├── db/
-│   │   │   ├── base.py                # declarative base, constraint naming conventions
-│   │   │   └── session.py             # engine, session factory, get_db
-│   │   ├── models/
-│   │   │   ├── user.py
-│   │   │   ├── organization.py
-│   │   │   ├── reporting_period.py
-│   │   │   ├── activity_record.py
-│   │   │   ├── emission_factor.py
-│   │   │   └── emission_calculation.py
-│   │   ├── schemas/
-│   │   │   ├── common.py              # camelCase base model, pagination, error envelope
-│   │   │   ├── auth.py
-│   │   │   ├── organization.py
-│   │   │   ├── reporting_period.py
-│   │   │   ├── activity.py
-│   │   │   ├── emission_factor.py
-│   │   │   ├── emissions.py           # summary, monthly trend
-│   │   │   └── report.py
-│   │   ├── services/
-│   │   │   ├── auth_service.py
-│   │   │   ├── organization_service.py
-│   │   │   ├── reporting_period_service.py
-│   │   │   ├── activity_service.py
-│   │   │   ├── emission_factor_service.py
-│   │   │   ├── emission_calculation_service.py
-│   │   │   ├── emissions_query_service.py
-│   │   │   ├── report_service.py      # report assembly and CSV writing
-│   │   │   └── reference_data_service.py
-│   │   ├── calculation/
-│   │   │   ├── engine.py              # pure calculation functions
-│   │   │   └── activity_types.py      # types, canonical units, scope labels
-│   │   ├── api/
-│   │   │   ├── deps.py                # get_db, get_current_user, pagination parameters
-│   │   │   └── v1/
-│   │   │       ├── router.py
-│   │   │       └── routes/
-│   │   │           ├── health.py
-│   │   │           ├── auth.py
-│   │   │           ├── reference_data.py
-│   │   │           ├── organizations.py
-│   │   │           ├── reporting_periods.py
-│   │   │           ├── activities.py
-│   │   │           ├── emission_factors.py
-│   │   │           ├── emissions.py
-│   │   │           └── reports.py
-│   │   └── seed/
-│   │       ├── __main__.py            # python -m app.seed
-│   │       ├── emission_factors.json  # configurable demonstration factors
-│   │       └── demo_data.py           # demo users, fictional organizations, 18 months of activity
-│   └── tests/
-│       ├── conftest.py                # test database, transactional fixtures, API client
-│       ├── unit/                      # calculation engine, pure helpers
-│       ├── integration/               # services against PostgreSQL
-│       └── api/                       # endpoints, error envelope
-└── frontend/
-    ├── Dockerfile
-    ├── package.json
-    ├── vite.config.ts
-    ├── tsconfig.json
-    ├── index.html
-    └── src/
-        ├── main.tsx
-        ├── App.tsx                    # providers (QueryClient, Router, Auth)
-        ├── routes.tsx
-        ├── layouts/
-        │   └── AppLayout.tsx          # sidebar, top bar (org switcher, user menu), outlet
-        ├── pages/
-        │   ├── LoginPage.tsx
-        │   ├── OrganizationsPage.tsx
-        │   ├── CreateOrganizationPage.tsx
-        │   ├── OrganizationSettingsPage.tsx
-        │   ├── DashboardPage.tsx
-        │   ├── ActivitiesPage.tsx
-        │   ├── ReportsPage.tsx
-        │   ├── EmissionFactorsPage.tsx
-        │   └── NotFoundPage.tsx
-        ├── components/
-        │   ├── ui/                    # Button, Card, StatCard, DataTable, Modal, FormField,
-        │   │                          # Select, Badge, Skeleton, EmptyState, ErrorState, Toast
-        │   ├── auth/                  # AuthProvider, RequireAuth, UserMenu
-        │   ├── charts/                # ChartCard, EmissionsTrendChart, EmissionsBreakdownChart
-        │   ├── dashboard/             # SummaryCards, PeriodSelector
-        │   ├── organization/          # OrganizationForm, ReportingPeriodForm, OrgSwitcher
-        │   ├── activities/            # ActivityForm, ActivityTable, ActivityFilters
-        │   ├── emissions/             # FactorBadge, FactorTable, DisclaimerNote
-        │   └── reports/               # ReportFilters, ReportSummary, ExportButton
-        ├── services/
-        │   ├── apiClient.ts           # fetch wrapper, base URL, bearer token, ApiError
-        │   ├── authService.ts
-        │   ├── organizationService.ts
-        │   ├── activityService.ts
-        │   ├── emissionFactorService.ts
-        │   ├── emissionsService.ts
-        │   └── reportService.ts
-        ├── hooks/                     # useOrganizations, useActivities, useEmissionsSummary,
-        │                              # useMonthlyEmissions, useReport, useSelectedPeriod …
-        ├── types/                     # organization.ts, activity.ts, emissions.ts, api.ts
-        ├── utils/                     # formatters, download helpers
-        ├── styles/
-        │   └── index.css              # Tailwind import and design tokens (@theme)
-        └── test/                      # setup, MSW handlers, render helpers
+backend/app/
+  api/v1/routes/   # HTTP only (AD-1)
+  services/        # rules and queries, per module (AD-2, AD-3)
+  calculation/     # pure engine, share(), period_months(), activity types, disclaimer (AD-5, AD-6, AD-9, AD-15)
+  core/            # settings, error_codes, reference lists (AD-10, AD-15)
+  models/ schemas/ db/ seed/
+backend/tests/     # factories.py (AD-2), perf/make_dataset.py (AD-18)
+frontend/src/
+  pages/ hooks/ services/ types/ utils/ layouts/
+  components/ui/         # M0 shared states (AD-14)
+  components/charts/     # M4 charts + table equivalents (AD-14)
+  components/emissions/  # M3 DisclaimerNote, HeadlineFigures (AD-6, AD-17)
+  components/<feature>/
 ```
 
-Component tests sit next to their components as `*.test.tsx`.
+## Capability → Architecture Map
 
-## 15. Architecture decisions
+| Capability / Area | Lives in | Governed by |
+| --- | --- | --- |
+| R1–R3, R5, R7–R11 shell, sign-in, docs, health, local start (M0) | `layouts/`, `components/ui/`, auth, health routes | AD-1, AD-10, AD-13, AD-14, AD-16, AD-18 |
+| R4 seed (M0 command, M3 factors, M2 demo data) | `app/seed/` | AD-4, AD-15, AD-17 |
+| R6 reference data (M0, with M1 industries and M3 scope labels) | reference-data route, `app/core/reference/`, `app/calculation/activity_types.py` | AD-15, AD-17 |
+| R12–R16 organizations and periods (M1) | `organization_service`, `reporting_period_service`, organization pages | AD-2, AD-3, AD-8, AD-10, AD-14 |
+| R14 headline figures (M3 into M1's page) | `OrganizationDetail.headline` seam | AD-9, AD-17 |
+| R16 period-edit guard (M2 into M1's service) | `_check_activities_inside` seam | AD-8, AD-17 |
+| R17–R22 recording and correcting activities (M2) | `activity_service`, activity routes, Activities page | AD-2, AD-4, AD-7, AD-8, AD-14 |
+| R23–R33 factors, calculation, history, aggregates, recalculation (M3) | `calculation/`, factor, calculation and query services, Emission Factors page | AD-4, AD-5, AD-6, AD-7, AD-9, AD-12 |
+| R25, R31 factor shown and disclaimer everywhere | `CalculationRead`, `DisclaimerNote` | AD-6, AD-7 |
+| R34–R40 dashboard (M4) | Dashboard page, `components/charts/` | AD-5, AD-9, AD-14 |
+| R41–R45 reports and CSV exports (M5) | `report_service`, report routes, Reports page | AD-5, AD-9, AD-11 |
 
-| ADR | Decision | Rationale | Alternative considered |
-|---|---|---|---|
-| 01 | Synchronous SQLAlchemy 2.0 with psycopg 3 | Simpler code and tests. FastAPI runs sync endpoints in a thread pool, which is ample at demo scale | Async SQLAlchemy |
-| 02 | Services own their queries; no repository layer | Five tables. Repositories would add indirection without benefit. Revisit if queries start being duplicated | Repository pattern |
-| 03 | Alembic migrations | Versioned schema history, reproducible databases | `create_all` on startup |
-| 04 | `Decimal` and `NUMERIC`, with rounding only in the engine | Exact results and a single rounding point | float |
-| 05 | Versioned, immutable factors. Calculations snapshot their inputs and keep history through `is_current` | Every number stays explainable and reproducible | Overwriting factors and results in place |
-| 06 | Calculate synchronously in the activity write transaction | An activity never exists without a current result. Simple | Background job queue |
-| 07 | An activity's period is derived from its date, and a composite FK guarantees it belongs to the same organization | Integrity and simple filtering | Client-chosen period, or date-range queries only |
-| 08 | Aggregate in SQL | Meets NFR-02 | Aggregating in Python |
-| 09 | camelCase JSON through Pydantic aliases, with decimals sent as JSON numbers | Idiomatic TypeScript on the client. Values are far inside float64 precision, and the client only displays them | snake_case JSON, or decimals as strings |
-| 10 | UUID primary keys | IDs in URLs are not guessable or enumerable | Serial integers |
-| 11 | TanStack Query for server state, with the organization and period in the URL | Built-in loading, error and caching behaviour, plus shareable links | Hand-written `useEffect` hooks, a global store |
-| 12 | Mock login: seeded users, bcrypt hashes, stateless HS256 JWT bearer tokens stored in `localStorage`, roles not enforced (Q-02) | Makes the demo feel like a real SaaS at low cost, with no session store | No authentication; httpOnly cookie sessions (needs CSRF handling); a real identity provider |
-| 13 | Integration tests use real PostgreSQL | Partial indexes, exclusion constraints and `NUMERIC` behaviour are PostgreSQL-specific | SQLite |
+## Deferred
 
-## 16. Risks and known limitations
-
-| Item | Note |
-|---|---|
-| Mock login only | Shared demo password, tokens in `localStorage` (exposed to XSS), no revocation, roles not enforced. Mitigated by binding to localhost. Real authentication is required before any shared deployment |
-| One factor per activity type | Cannot express regional or yearly factors. Extension path: add `region` and `valid_from`/`valid_to` to `emission_factors`, and select by activity date and organization country |
-| No unit conversion | The engine's unit check is the extension point (Q-05) |
-| Decimals sent as floats at the API boundary | Fine for display. Revisit if other systems consume the API for further computation |
-
-## Change log
-
-| Version | Date | Change |
-|---|---|---|
-| 0.1 | 2026-11-10 | Initial draft for CP2 |
-| 0.2 | 2026-11-10 | CP2 approved. Q-02 mock login: §6.5, users table, auth endpoints, 401 error, auth env vars, ADR-12 rewritten, folder additions. Q-01: BMAD folders and the BMAD `docs/` layout (planning vs implementation artifacts) in §14 |
+- **Organization search or paging:** only past 100 organizations; until then `GET /organizations` is unpaged (AD-10).
+- **Regional or yearly factors:** extension path is `valid_from`/`valid_to` and a region on factors, selected by activity date and organization country (A-08).
+- **Unit conversion:** the engine's unit check is the extension point (Q-05).
+- **Real authentication and role permissions:** required before any shared deployment (FR-AUTH-06).
+- **Environments beyond local:** no staging, cloud, backups or monitoring; local Docker Compose is the only target (A-12).
+- **Concurrent edits to one activity:** last save wins; period containment is already protected by AD-8's row locks.
+- **Background jobs:** recalculation and exports run in the request; move to jobs only if NFR-02's 50,000-row volume is exceeded.
+- **Decimals as strings in the API:** only if figures beyond AD-5's stated limit are needed, or another system consumes the API for arithmetic.
+- **Design token values and visual design:** CP4 sets values for the token names fixed in AD-14, plus layout and responsive behaviour (NFR-03, NFR-04).
+- **Python 3.14:** move when convenient; 3.12 receives security fixes until 2028-10.
+- **TypeScript 7:** once typescript-eslint supports it.

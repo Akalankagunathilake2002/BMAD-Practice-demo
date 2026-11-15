@@ -9,6 +9,7 @@ sources:
 companions:
   - docs/initiative-org-company-management/prd-org-2026-11-15/prd-org-2026-11-15.md
   - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md
+  - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md
   - docs/initiative-org-company-management/prd-org-2026-11-15/addendum.md
 after: []
 risk: low
@@ -56,7 +57,8 @@ A sustainability manager sets up an organization and its periods in one form and
 - parent — docs/initiative-carbontrack/initiative-carbontrack.md, Requirements R12–R16
 - prd — docs/initiative-org-company-management/prd-org-2026-11-15/prd-org-2026-11-15.md, §4 Features (adopted companion: each FR's testable consequences)
 - addendum — docs/initiative-org-company-management/prd-org-2026-11-15/addendum.md, Architecture notes
-- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, §11.1 Ownership
+- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, AD-1–AD-18 (the contract; AD-2 ownership, AD-17 seams)
+- architecture detail — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md, for anything no AD covers
 
 ## Notes
 
