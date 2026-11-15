@@ -1,0 +1,203 @@
+---
+title: "CarbonTrack — Module PRD: Dashboard (M4)"
+status: final
+created: 2026-11-15
+updated: 2026-11-15
+module: M4
+slug: dsh
+parent: docs/planning/prd.md
+---
+
+# CarbonTrack — Module PRD: Dashboard (M4)
+
+| | |
+|---|---|
+| Module | M4 Dashboard, slug `dsh` |
+| Status | Final, awaiting CP3 approval (merge of the CP3 pull request, Q-17) |
+| Scope | 8 FRs: DSH.FR-1 to 6 MVP; DSH.FR-7 Should; DSH.FR-8 Could (§6) |
+| Parent | [Master PRD v0.2](../../prd.md) (approved at CP1) |
+| Constraints from | [Master Architecture v0.2](../../architecture.md) (approved at CP2) |
+| Related | [M3 module PRD](../prd-emi-2026-11-14/prd.md) (aggregates) · [M1 module PRD](../prd-org-2026-11-15/prd.md) (periods) · [M0 module PRD](../prd-plt-2026-11-14/prd.md) (page states) · [M2 module PRD](../prd-act-2026-11-15/prd.md) (selected period) |
+| Checkpoint | CP3 Module PRDs |
+| Decision log | [.memlog.md](.memlog.md) · Supporting detail in [addendum.md](addendum.md) |
+
+## 0. Document purpose
+
+This PRD details what M4 must do so that UX (CP4) and epics and stories (CP5) can be written from it. It does not repeat the master PRD. Where a rule already exists there, in the architecture or in another module PRD, this document cites its ID (for example FR-DSH-02, NFR-04, EMI.FR-6, ORG.FR-4, PLT.FR-14) and adds only what is left open.
+
+New functional requirements are numbered **DSH.FR-1** onward. Each carries a tag:
+
+- **MVP**: refines a Must requirement or a master NFR, so it is part of the MVP (master §9).
+- **Should** or **Could**: refines a master requirement with that priority.
+
+Rules inferred where the source documents are silent are marked `[ASSUMPTION]` and indexed in §9. All of them were accepted at the draft review on 2026-11-15. The tags stay so that story refinement can trace them.
+
+All master non-functional requirements apply to M4 unchanged. NFR-02 (aggregate speed), NFR-03 (responsive) and NFR-04 (charts never rely on colour alone, and have a table equivalent) matter most here.
+
+## 1. Vision
+
+The dashboard is the page an Executive Reviewer opens and understands in ten seconds: how much, which sources, and which way it is going. It is also the end of journey J1 and the proof of J2: the moment a new organization's empty page fills with the first numbers.
+
+M4 calculates nothing. Every figure comes from M3's aggregates (EMI.FR-5, EMI.FR-6), so the dashboard, the organization's headline figures and the reports can never disagree. M4 owns how those numbers are selected, arranged and charted.
+
+## 2. Users and journeys
+
+The personas are defined in [project brief §3](../../../analysis/project-brief.md#3-users-and-stakeholders). M4 serves the **Executive / Finance Reviewer**, who reads and rarely enters data, and the **Sustainability Manager**, who checks the effect of what was just entered.
+
+M4 realizes the end of **J1** (the empty dashboard that prompts "Add activity data"), the confirmation step of **J2** (the figures update after a save), and the first half of **J3** (choose a period, read the cards, trend and breakdown).
+
+## 3. Glossary
+
+*Reporting period*, *activity type* and *emission calculation* keep their master meanings. *Selected period* is defined in the M2 PRD, and *page state* in the M0 PRD. This PRD adds:
+
+- **Summary card.** One tile showing a single figure with its label and, when DSH.FR-8 is built, its change from the previous period.
+- **Trend chart.** The month-by-month chart of the selected period, stacked by activity type.
+- **Breakdown chart.** The chart of each activity type's share of the selected period's total.
+- **Previous period.** The organization's period that ends most recently before the selected period starts (DSH.FR-8).
+- **Series.** One activity type's data in a chart.
+
+## 4. Features
+
+### 4.1 Choosing the period
+
+Refines FR-DSH-04.
+
+#### DSH.FR-1 · MVP: Period selector
+
+The dashboard shows figures for one reporting period of the active organization at a time.
+
+**Consequences (testable):**
+- The selector lists the organization's periods in the same order as the organization details page (ORG.FR-4).
+- The default is the period containing today, otherwise the most recent period (FR-DSH-04).
+- The selection is part of the page address and is shared with the Activities and Reports pages (architecture §10.2), so moving between pages keeps the period.
+- Switching organization resets the selection to the new organization's default (PLT.FR-2).
+- `[ASSUMPTION]` There is no "All periods" option on the dashboard. All-time figures live on the organization details page (ORG.FR-5).
+
+### 4.2 Reading the figures
+
+Refines FR-DSH-01, FR-DSH-02 and FR-DSH-03.
+
+#### DSH.FR-2 · MVP: Summary cards
+
+**Consequences (testable):**
+- The cards are those listed in FR-DSH-01, in that order.
+- Figures come from M3's total and share by type for the selected period (EMI.FR-5).
+- The demonstration disclaimer is visible on the dashboard (FR-EMI-09).
+- Cards show tonnes CO2e to 2 decimals (master §6, Q-11). `[ASSUMPTION]` Shares are shown as whole percentages, and because each is rounded separately they may not add up to exactly 100.
+- A type with no activity shows 0.00 t and 0%.
+
+#### DSH.FR-3 · MVP: Monthly trend chart
+
+**Consequences (testable):**
+- One bar per calendar month of the selected period, stacked by activity type, from M3's monthly totals (EMI.FR-6).
+- The chart spans **every month of the period**, from its first month to its last. Months M3 leaves out are shown as zero, so a gap in the data is visible as a gap in the chart. This includes future months of a period that has not ended.
+- `[ASSUMPTION]` Months are labelled with a short month name and the year when the period crosses a year boundary.
+- The vertical axis uses the same unit as the cards (t CO2e). `[ASSUMPTION]` For small totals, UX (CP4) may switch the axis to kg; the figures themselves do not change.
+- Each series uses the activity type's chart colour from the design tokens (architecture §10.4) and is distinguishable without colour (NFR-04).
+
+#### DSH.FR-4 · MVP: Breakdown chart
+
+**Consequences (testable):**
+- A donut chart of the three activity types' shares of the selected period's total, from the same data as the cards (EMI.FR-5).
+- `[ASSUMPTION]` The total is shown in the centre of the donut.
+- A type with no activity is still listed in the legend, with 0%.
+
+### 4.3 Page states and accessibility
+
+Refines FR-DSH-05, NFR-04 and PLT.FR-14.
+
+#### DSH.FR-5 · MVP: Page states
+
+**Consequences (testable):**
+- While loading, cards and chart areas show skeletons (PLT.FR-14).
+- When the selected period has no activity, the cards stay visible showing 0, and the chart area shows the empty state with the main action "Add activity data", which opens the Activities page with the add form (ACT.FR-1). `[ASSUMPTION]` The breakdown chart is replaced by the empty state too, not drawn as an empty ring.
+- When the organization has no periods at all, the whole page shows an empty state that leads to adding a period (ORG.FR-7).
+- When loading fails, the error panel with Retry replaces the affected area (PLT.FR-13). `[ASSUMPTION]` Cards and charts load independently, so one failure does not blank the whole page.
+- After an activity is saved elsewhere in the app, the dashboard shows the new figures the next time it is displayed, without a manual refresh (architecture §10.1).
+
+#### DSH.FR-6 · MVP: Text equivalent for every chart
+
+Refines NFR-04.
+
+**Consequences (testable):**
+- Each chart offers a table view of the same numbers, reachable by keyboard: months by type for the trend, types with totals and shares for the breakdown.
+- Screen readers get a summary of each chart (period, total, largest type). `[ASSUMPTION]` The wording is set in UX (CP4).
+
+### 4.4 Interaction and comparison
+
+#### DSH.FR-7 · Should: Interactive charts
+
+Refines FR-DSH-06.
+
+**Consequences (testable):**
+- Hovering or focusing a bar or segment shows a tooltip with the exact value and unit, and the month or type.
+- Clicking a legend item hides or shows that series. `[ASSUMPTION]` The axis rescales to the visible series, and the state resets when the period changes.
+- Both work with keyboard and pointer (NFR-04).
+
+#### DSH.FR-8 · Could: Previous-period comparison
+
+Refines FR-DSH-07.
+
+**Consequences (testable):**
+- Each card shows the change from the previous period as an absolute value and a percentage.
+- The previous period is the one that **ends most recently before the selected period starts** (ORG.FR-4 order). No comparison is shown for the earliest period, or when a gap separates the two periods, or when the previous period has no activity.
+- `[ASSUMPTION]` A rise in emissions is marked as unfavourable and a fall as favourable, by wording and icon as well as colour (NFR-04).
+- `[ASSUMPTION]` Periods of different lengths are compared as they are, with the period names shown so the reader can judge.
+
+## 5. Non-goals
+
+The master PRD's non-goals (§2) and out-of-scope list (§10) apply. In addition, M4 does **not**:
+
+- calculate or aggregate anything: every number comes from M3;
+- show all-time figures or compare more than two periods;
+- filter by activity type or date range: that is the Activities and Reports pages;
+- export charts or figures: exports are M5;
+- show targets, forecasts or reduction plans (master §10).
+
+## 6. MVP scope
+
+**MVP:** DSH.FR-1 to DSH.FR-6.
+**Should:** DSH.FR-7 (interactive charts).
+**Could:** DSH.FR-8 (previous-period comparison).
+
+DSH.FR-6 is MVP because NFR-04 requires a text or table equivalent for every chart. It is a separate FR so it gets its own story and is not dropped along with the Should-level chart interactions.
+
+## 7. What M4 provides to other modules
+
+| Module | Receives from M4 | Note |
+|---|---|---|
+| M5 Reports | The shared chart components with their table equivalents (`components/charts/`, owned by M4 per architecture §11.1), if the report summary shows charts | M5 uses the same aggregates for its summary |
+| M3 Emissions | Nothing. M4 only consumes EMI.FR-5 and EMI.FR-6 | M3 stays unaware of M4 |
+
+M4 depends on M0 (shell, page states, design tokens), M1 (periods) and M3 (aggregates). Only M5 may reuse M4's chart components.
+
+## 8. Success metrics
+
+- **SM-1: Ten-second read.** Total, shares and trend are visible without scrolling on a 1366 px wide screen. Validates DSH.FR-2 to DSH.FR-4 and goal G3.
+- **SM-2: One source of numbers.** The dashboard total equals the organization's headline total (ORG.FR-5) and the report summary total (FR-RPT-01) for the same period and data. Validates DSH.FR-2 and goal G2.
+- **SM-3: Fast enough.** The dashboard's data loads within NFR-02's limit with the 50,000-row dataset.
+- **SM-C1 (counter-metric): Fitting on one screen must not hide data.** Do not drop months, merge small types into "Other", or truncate labels to make SM-1 pass. Counterbalances SM-1.
+
+## 9. Open questions and assumptions
+
+### Open questions
+
+None block M4.
+
+### Assumptions index
+
+All accepted at the draft review on 2026-11-15.
+
+| # | Where | Assumption |
+|---|---|---|
+| 1 | DSH.FR-1 | No "All periods" option on the dashboard |
+| 2 | DSH.FR-2 | Shares are whole percentages and may not add up to exactly 100 |
+| 3 | DSH.FR-3 | Short month labels, with the year when the period crosses a year boundary |
+| 4 | DSH.FR-3 | UX may switch the axis to kg for small totals |
+| 5 | DSH.FR-4 | The total is shown in the centre of the donut |
+| 6 | DSH.FR-5 | With no activity, the breakdown chart is replaced by the empty state |
+| 7 | DSH.FR-5 | Cards and charts load independently |
+| 8 | DSH.FR-6 | Screen-reader summary wording is set in UX |
+| 9 | DSH.FR-7 | Hiding a series rescales the axis; the state resets on period change |
+| 10 | DSH.FR-8 | A rise is unfavourable, a fall favourable, marked beyond colour |
+| 11 | DSH.FR-8 | Periods of different lengths are compared as they are, with names shown |
