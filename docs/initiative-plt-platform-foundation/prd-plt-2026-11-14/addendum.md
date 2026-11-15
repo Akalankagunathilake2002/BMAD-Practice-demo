@@ -1,6 +1,6 @@
 # Addendum — Module PRD: Platform Foundation (M0)
 
-Detail that supports [prd.md](prd.md) but belongs in the architecture, UX or stories. The decisions themselves are recorded in [.memlog.md](.memlog.md).
+Detail that supports [prd.md](prd-plt-2026-11-14.md) but belongs in the architecture, UX or stories. The decisions themselves are recorded in [.memlog.md](.memlog.md).
 
 ## Options considered
 

@@ -1,6 +1,6 @@
 # Input reconciliation — M3 module PRD
 
-Input: [prd-emi-2026-11-14/prd.md](../prd-emi-2026-11-14/prd.md), compared with prd.md and addendum.md.
+Input: [prd-emi-2026-11-14/prd.md](../../initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md), compared with prd.md and addendum.md.
 
 | M3 item | Module PRD |
 |---|---|

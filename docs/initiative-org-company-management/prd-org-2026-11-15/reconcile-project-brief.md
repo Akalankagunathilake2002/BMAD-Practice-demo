@@ -1,6 +1,6 @@
 # Input reconciliation — project brief
 
-Input: [docs/analysis/project-brief.md](../../../analysis/project-brief.md), compared with prd.md and addendum.md.
+Input: [docs/initiative-carbontrack/project-brief/project-brief.md](../../initiative-carbontrack/project-brief/project-brief.md), compared with prd.md and addendum.md.
 
 | Brief item relevant to M1 | Where the PRD covers it |
 |---|---|

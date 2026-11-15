@@ -1,6 +1,6 @@
 # Input reconciliation — master architecture v0.2
 
-Input: [docs/planning/architecture.md](../../architecture.md), used for constraints only.
+Input: [docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md](../../initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md), used for constraints only.
 
 | Architecture item | Module PRD |
 |---|---|

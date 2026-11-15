@@ -11,8 +11,8 @@ created: 2026-11-10
 | Version | 0.2 |
 | Date | 2026-11-10 |
 | Status | **Approved at Checkpoint 1** (2026-11-10). v0.2 adds mock login, as decided in Q-02 |
-| Source | [Project brief](../analysis/project-brief.md) |
-| Related | [Master Architecture](architecture.md) · [Assumptions & open questions](assumptions-and-open-questions.md) |
+| Source | [Project brief](../project-brief/project-brief.md) |
+| Related | [Master Architecture](../architecture-carbontrack/architecture-carbontrack.md) · [Assumptions & open questions](../assumptions-and-open-questions.md) |
 
 ## 1. Summary
 
@@ -32,7 +32,7 @@ CarbonTrack lets an organization record its electricity, fuel and business-trave
 
 ## 3. Users
 
-See [project brief §3](../analysis/project-brief.md#3-users-and-stakeholders). The primary user is the Sustainability Manager. Users sign in with seeded demo accounts, one per persona. Each account's role is shown in the UI but does not restrict what the user can do (A-01).
+See [project brief §3](../project-brief/project-brief.md#3-users-and-stakeholders). The primary user is the Sustainability Manager. Users sign in with seeded demo accounts, one per persona. Each account's role is shown in the UI but does not restrict what the user can do (A-01).
 
 ## 4. Modules
 
@@ -45,7 +45,7 @@ See [project brief §3](../analysis/project-brief.md#3-users-and-stakeholders). 
 | M4 | Dashboard | Summary cards and charts | Uses M3 endpoints | ✓ |
 | M5 | Reports | Period summaries, line items, CSV export | ✓ | ✓ |
 
-M0 is not a module in the source requirements. It is added so cross-cutting work (Docker, layout, error handling, design system) has an owner and its own epic. Module boundaries and dependencies are defined in [architecture §11](architecture.md#11-module-boundaries-and-dependencies).
+M0 is not a module in the source requirements. It is added so cross-cutting work (Docker, layout, error handling, design system) has an owner and its own epic. Module boundaries and dependencies are defined in [architecture §11](../architecture-carbontrack/architecture-carbontrack.md#11-module-boundaries-and-dependencies).
 
 ## 5. Functional requirements
 
@@ -182,7 +182,7 @@ These values are illustrative and for demonstration only. They are not official 
 2. Each Must requirement is traced to at least one user story and at least one automated test.
 3. `docker compose up` on a clean checkout starts the database, API and UI with seed data, and the README steps have been verified.
 4. Backend and frontend test suites pass.
-5. CP1 to CP6 are recorded as approved in [docs/README.md](../README.md).
+5. CP1 to CP6 are recorded as approved in [docs/README.md](../../README.md).
 
 ## 10. Out of scope
 
@@ -190,7 +190,7 @@ Production authentication (registration, password reset, SSO) and role-based per
 
 ## 11. Open items affecting this PRD
 
-All CP1 questions were resolved at approval. See the decision log in [assumptions-and-open-questions.md](assumptions-and-open-questions.md). Q-16 (industry list) and Q-18 (Emission Factors page) are confirmed in the module PRDs at CP3.
+All CP1 questions were resolved at approval. See the decision log in [assumptions-and-open-questions.md](../assumptions-and-open-questions.md). Q-16 (industry list) and Q-18 (Emission Factors page) are confirmed in the module PRDs at CP3.
 
 ## Change log
 

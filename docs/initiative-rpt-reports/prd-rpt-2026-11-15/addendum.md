@@ -1,6 +1,6 @@
 # Addendum — Module PRD: Reports (M5)
 
-Detail that supports [prd.md](prd.md) but belongs in the architecture, UX or stories. The decisions themselves are recorded in [.memlog.md](.memlog.md).
+Detail that supports [prd.md](prd-rpt-2026-11-15.md) but belongs in the architecture, UX or stories. The decisions themselves are recorded in [.memlog.md](.memlog.md).
 
 ## Options considered
 

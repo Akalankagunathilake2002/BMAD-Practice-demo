@@ -1,6 +1,6 @@
 # Input reconciliation — master PRD v0.2 (and project brief)
 
-Input: [docs/planning/prd.md](../../prd.md), compared with prd.md and addendum.md.
+Input: [docs/initiative-carbontrack/prd-carbontrack/prd-carbontrack.md](../../initiative-carbontrack/prd-carbontrack/prd-carbontrack.md), compared with prd.md and addendum.md.
 
 | Master item | Module PRD |
 |---|---|

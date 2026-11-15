@@ -11,7 +11,7 @@ created: 2026-11-10
 | Version | 0.2 |
 | Date | 2026-11-10 |
 | Status | **Approved at Checkpoint 2** (2026-11-10). v0.2 adds mock login (Q-02) and the BMAD folder layout (Q-01) |
-| Inputs | [Master PRD](prd.md) · [Project brief](../analysis/project-brief.md) |
+| Inputs | [Master PRD](../prd-carbontrack/prd-carbontrack.md) · [Project brief](../project-brief/project-brief.md) |
 
 ## 1. Architectural drivers
 
