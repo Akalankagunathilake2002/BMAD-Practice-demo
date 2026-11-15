@@ -60,3 +60,4 @@ Approving a checkpoint without comment accepts the **recommended** option for ea
 | Q-15 | No organization delete or archive in the MVP (a) | 2026-11-10 | Accepted at CP1 |
 | Q-17 | One branch and pull request per checkpoint (b) | 2026-11-10 | Akalanka |
 | Q-01 (revisited) | Moved to the BMAD v7 preview alpha (6.13.0-next, installed from GitHub with `npx skills`) ahead of its stable release. Planning migrated to the v7 layout: parent `initiative-carbontrack` with one child initiative per module ([migration record](../migration-v6-v7/migration-v6-v7.md)) | 2026-11-15 | Akalanka |
+| Q-09 | Designs produced in Figma through the official Figma MCP server (option a); DESIGN.md and EXPERIENCE.md stay the contract ([UX](ux-carbontrack/ux-carbontrack.md)) | 2026-11-15 | Akalanka |
