@@ -11,17 +11,9 @@
 # ─────────────────────────────────────────────────────────────────
 
 [core]
-user_name = "BMad"
-communication_language = "English"
 project_name = "CarbonTrack"
-document_output_language = "English"
 output_folder = "docs"
 
-[modules.bmm]
-user_skill_level = "intermediate"
-planning_artifacts = "docs/planning"
-implementation_artifacts = "docs/implementation"
-project_knowledge = "docs"
 
 [agents.bmad-agent-analyst]
 module = "bmm"
