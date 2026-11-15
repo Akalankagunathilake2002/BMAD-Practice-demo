@@ -7,6 +7,7 @@ sources:
   - docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md
   - docs/initiative-carbontrack/initiative-carbontrack.md
 companions:
+  - docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md
   - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md
   - docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/addendum.md
 after: []
@@ -25,26 +26,27 @@ Every reader can trace any emission figure to its activity, factor version and q
 
 ## Requirements
 
-- R1 (EMI.FR-1, MVP; parent R23, R21): Calculate on every save: the calculation service M2's save calls (Decision A)
-- R2 (EMI.FR-2, MVP; parent R24): Keep the calculation history
-- R3 (EMI.FR-3, MVP; parent R25): Return the factor version with every calculation (M2, M4 and M5 show it)
-- R4 (EMI.FR-4, MVP; parent R31): Keep the demonstration disclaimer in every source label (M2, M4 and M5 show it)
-- R5 (EMI.FR-5, MVP; parent R26, R27): Total and share by activity type
-- R6 (EMI.FR-6, MVP; parent R28): Monthly totals
-- R7 (EMI.FR-7, MVP; parent R29): Add a factor version
-- R8 (EMI.FR-8, Should; parent R30, R1): Emission Factors page, behind M0's sidebar entry
-- R9 (EMI.FR-9, Should; parent R32): Recalculate an organization
-- R10 (EMI.FR-10, Could; parent R33): GHG scope label per activity type, added to M0's activity-type list (M2 and M5 show it)
-- R11 (architecture §8.2, MVP; parent R17): The activity table and its link to a period, built here so the calculation core can be tested (Decision A); M2 builds recording on it
-- R12 (PLT.FR-11, MVP; parent R4): Seed factor version 1 for each activity type (moved from M0, Decision B)
-- R13 (ORG.FR-5, Should; parent R14): Headline figures on the organization details page: activity count and total, all periods (moved from M1, Decision B)
-
-Parent requirements this child delivers all or part of: R1, R4, R14, R17, R21, R23, R24, R25, R26, R27, R28, R29, R30, R31, R32, R33.
+- R1 (EMI.FR-1; parent R23, R21): Saving an activity, created or edited (even only its description), creates a new current calculation with the active factor in the same save; with no active factor for its type the save is refused naming the type, and nothing is stored.
+- R2 (EMI.FR-2; parent R24): Each activity has exactly one current calculation and keeps every earlier one, never edited, oldest first; totals use current calculations only.
+- R3 (EMI.FR-3; parent R25): Every API response containing a calculation carries the factor version it used (value, unit, version, source label), and each history entry carries its own.
+- R4 (EMI.FR-4; parent R31): Every source label, shown or returned, contains the demonstration disclaimer, whatever the user typed.
+- R5 (EMI.FR-5; parent R26, R27): For one period or overall, M3 returns the total and each of the three activity types' emissions and share; a type with no data shows 0 and 0%, and a zero total raises no error.
+- R6 (EMI.FR-6; parent R28): For one period, M3 returns totals per calendar month of activity date, overall and by type, oldest first, only for months with activity, within NFR-02's response time.
+- R7 (EMI.FR-7; parent R29): A user adds a factor version, value 0 to 999,999.999999 with at most 6 decimals and optional source text up to 100 characters, that becomes active at once for every organization; older versions stay unchanged and undeletable; a simultaneous add for the same type gets a conflict error.
+- R8 (EMI.FR-8, Should; parent R30, R1): The Emission Factors page, behind M0's sidebar entry, shows each type's active factor and its version history newest first with the date added, the add-version form and the disclaimer.
+- R9 (EMI.FR-9, Should; parent R32): Before recalculating an organization the user sees how many calculations use an older factor and confirms; all are replaced in one all-or-nothing step and the user sees how many changed, or "All results are up to date" when none are out of date.
+- R10 (EMI.FR-10, Could; parent R33): Each activity type carries its informational scope label in M0's activity-type list, and the Emission Factors page shows it.
+- R11 (architecture §8.2; parent R17): The activity table exists with each activity linked to one period of its organization, so the calculation core is tested with stored activities before M2 adds recording (Decision A).
+- R12 (PLT.FR-11; parent R4): The seed command creates factor version 1 for each activity type only when that type has none, and running it again changes nothing.
+- R13 (ORG.FR-5, Should; parent R14): The organization details page shows the activity count and total emissions across all periods, matching M3's overall total, with 0 and no error when there is no data.
 
 ## Constraints
 
+- Emission arithmetic and storage use exact decimals, rounded once to 6 places half-up, never binary floating point (master PRD §6, NFR-01).
+- Factor versions never change and apply to every organization: one active version per type, with no regional, yearly or per-organization factors (A-08, FR-EMI-07).
+- A factor change alone never alters a stored calculation; only an edit or an explicit recalculation does (A-09, Q-06).
+- Factor values are demonstration values and are never presented as official (FR-EMI-09).
 - The parent's constraints apply (docs/initiative-carbontrack/initiative-carbontrack.md, Constraints).
-- Module PRD §0 names the master NFRs that matter most here.
 
 ## Done when
 
@@ -61,11 +63,13 @@ Parent requirements this child delivers all or part of: R1, R4, R14, R17, R21, R
 ## References
 
 - parent — docs/initiative-carbontrack/initiative-carbontrack.md, Requirements R23–R33
-- prd — docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md, §4 Features
+- prd — docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md, §4 Features (adopted companion: each FR's testable consequences)
 - addendum — docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/addendum.md, Architecture notes
 - architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, §11.1 Ownership
 
 ## Notes
 
+- Open question: the architecture must add a read-only out-of-date count (R9), a source-text field (R7), the date each factor version was added (R8), and move the activity table's owner from M2 to M3 (R11, Decision A); owner: architect, before CP5.
+- Decision: 2026-11-15, the PRD's open question on the sidebar link vs the Should page is settled by M0 R1: the entry is hidden until the page exists.
 - Decision: 2026-11-15, A: M3 builds the activity table and the calculation core first and tests them directly; M2 builds what users do with activities on top and calls the calculation in the same save. Architecture §11.1 (activity table owned by M2) must be updated.
 - Decision: 2026-11-15, B: stories whose check needs a later module move to that module: demo-data seeding to M2, factor version 1 seeding to M3, headline figures to M3, the period-edit guard to M2. M0 keeps the seed command and demo users.
