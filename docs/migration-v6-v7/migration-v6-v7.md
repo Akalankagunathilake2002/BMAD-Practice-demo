@@ -1,7 +1,7 @@
 ---
 type: migration
 title: "Migrate CarbonTrack planning from BMAD v6 to the v7 initiative layout"
-status: draft
+status: done
 created: 2026-11-15
 ---
 
@@ -107,4 +107,25 @@ The repository already exists, so the current state was committed first (`1c7267
 
 ## Verification
 
-*Filled in after the moves (step 15).*
+Run on 2026-11-15 after step 14. Commits: `a19c09c` (step 7, documents), `70caa89` (step 8, envelopes and child list), `d3a7241` (step 13, paths), `5051c9b` (step 14, backlog and archive). Steps 6 and 9–12 changed nothing: no workspace, spec folders, pre-release specs or loose implementation files.
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Every v6 file is under an initiative, `backlog/` or `archive/`, or listed as left in place | Pass: 53 files moved; `docs/README.md` left in place (see above); none missing |
+| 2 | Moved folders keep their names and files; main file named after the folder; `initiative-*`, `backlog/`, `archive/` exist | Pass: 10 main files checked; `backlog/` and `archive/` hold `.gitkeep` |
+| 3 | Dated versions all present | Pass: no folders differ only by date |
+| 4 | `tickets.py status` exits 0 for every initiative | Pass: all 7 initiatives exit 0; no story counts to compare (no v6 tracking sources) |
+| 5 | Stories, entries and plans match | Not applicable: no v6 stories |
+| 6 | Plans have a build type and mapped status | Not applicable: no build records |
+| 7 | `covers` ids resolve | Pass: the six children's `covers` partition the parent's R1–R45 with no gaps or overlaps; no epics yet |
+| 8 | No pre-release `spec-<slug>/` folders remain | Not applicable: none existed |
+| 9 | Every live path resolves from its new folder | Pass: 0 unresolved links or frontmatter paths; decision logs and this record keep original paths |
+| 10 | Active initiative under `[core]`; `core.output_folder` resolves | Pass: `initiative-carbontrack`, `docs` |
+| 11 | Module config keys inside the old planning folder updated | Pass: none existed |
+| 12 | Store under git as answered | Pass: this repository; no new workspace |
+| 13 | Backup complete and never committed | Pass: 54 `docs/` files plus `_bmad/`; 0 commits include it |
+| 14 | This plan records questions, answers, backup and results | Pass |
+
+Also recorded: Q-01 (revisited) in `initiative-carbontrack/assumptions-and-open-questions.md`, with A-16 marked superseded.
+
+Reference outside the store, for the user to update: `PROGRESS.md` (untracked) mentions `docs/planning/…` paths.

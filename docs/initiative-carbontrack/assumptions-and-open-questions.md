@@ -27,7 +27,7 @@ Approving a checkpoint without comment accepts the **recommended** option for ea
 | A-13 | Seed data is entirely fictional: 2 organizations with 18 months of activity each, plus 4 demo users. | Shows trends and period comparison without real company data | Adjust volume |
 | A-14 | Industry is chosen from a predefined list of about 12 values. Country is chosen from ISO 3166-1. | Clean grouping and validation | Free text (Q-16) |
 | A-15 | Desktop-first design that remains usable on tablets and phones. | Enterprise SaaS usage pattern | UX phase rebalances |
-| A-16 | BMAD Method v6.12.4 (latest stable) is installed with the BMM module for Claude Code. Its artifacts go to `docs/planning` (planning) and `docs/implementation` (stories, sprint status, reviews). The v0.1 PRD and architecture, written before the install, are adopted as the BMAD planning artifacts. | Q-01 decision. BMAD v7 is only available as a beta preview | Migrate to v7 when it is stable (`bmad migrate`) |
+| A-16 | BMAD Method v6.12.4 (latest stable) is installed with the BMM module for Claude Code. Its artifacts go to `docs/planning` (planning) and `docs/implementation` (stories, sprint status, reviews). The v0.1 PRD and architecture, written before the install, are adopted as the BMAD planning artifacts. | Q-01 decision. BMAD v7 is only available as a beta preview | Migrate to v7 when it is stable (`bmad migrate`) **Superseded 2026-11-15:** moved to the v7 preview alpha; see Q-01 (revisited) in the decision log |
 | A-17 | The sign-in page lists the demo account emails. The shared demo password lives in `.env` and the README, not in the UI or the frontend bundle. | Keeps the secret out of the client while staying easy to demo | Show the password on the page |
 
 ## Open questions
@@ -59,3 +59,4 @@ Approving a checkpoint without comment accepts the **recommended** option for ea
 | Q-14 | Seed 2 organizations × 18 months (a) | 2026-11-10 | Accepted at CP2 |
 | Q-15 | No organization delete or archive in the MVP (a) | 2026-11-10 | Accepted at CP1 |
 | Q-17 | One branch and pull request per checkpoint (b) | 2026-11-10 | Akalanka |
+| Q-01 (revisited) | Moved to the BMAD v7 preview alpha (6.13.0-next, installed from GitHub with `npx skills`) ahead of its stable release. Planning migrated to the v7 layout: parent `initiative-carbontrack` with one child initiative per module ([migration record](../migration-v6-v7/migration-v6-v7.md)) | 2026-11-15 | Akalanka |
