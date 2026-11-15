@@ -42,9 +42,9 @@ Parent requirements this child delivers all or part of: R25, R31, R33, R41, R42,
 
 ## Done when
 
-- SM-1: Spreadsheet check.: For any report, summing the emissions column of the line items CSV gives exactly the report total, and the summary CSV's Total row matches it.
-- SM-2: One source of numbers.: The report total equals the dashboard total for the same period and type (DSH.FR-2).
-- SM-3: Opens cleanly.: Both CSV files open in Microsoft Excel, LibreOffice Calc and Google Sheets with the right columns, numbers and characters, without import settings.
+- SM-1: Spreadsheet check: For any report, summing the emissions column of the line items CSV gives exactly the report total, and the summary CSV's Total row matches it.
+- SM-2: One source of numbers: The report total equals the dashboard total for the same period and type (DSH.FR-2).
+- SM-3: Opens cleanly: Both CSV files open in Microsoft Excel, LibreOffice Calc and Google Sheets with the right columns, numbers and characters, without import settings.
 
 ## Boundaries
 

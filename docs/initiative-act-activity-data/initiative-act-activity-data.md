@@ -46,9 +46,9 @@ Parent requirements this child delivers all or part of: R4, R16, R17, R18, R19, 
 
 ## Done when
 
-- SM-1: Fast entry.: An activity is added in one dialog with three required fields, with no period or unit to choose.
-- SM-2: Every row explainable.: Every row in the list shows its emissions and the factor used.
-- SM-3: Clean rejects.: Every invalid save is refused by the server with a field-level error, including saves that bypass the form.
+- SM-1: Fast entry: An activity is added in one dialog with three required fields, with no period or unit to choose.
+- SM-2: Every row explainable: Every row in the list shows its emissions and the factor used.
+- SM-3: Clean rejects: Every invalid save is refused by the server with a field-level error, including saves that bypass the form.
 
 ## Boundaries
 

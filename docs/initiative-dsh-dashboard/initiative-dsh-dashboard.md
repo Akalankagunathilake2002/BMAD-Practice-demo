@@ -43,9 +43,9 @@ Parent requirements this child delivers all or part of: R31, R34, R35, R36, R37,
 
 ## Done when
 
-- SM-1: Ten-second read.: Total, shares and trend are visible without scrolling on a 1366 px wide screen.
-- SM-2: One source of numbers.: The dashboard total equals the organization's headline total (ORG.FR-5) and the report summary total (FR-RPT-01) for the same period and data.
-- SM-3: Fast enough.: The dashboard's data loads within NFR-02's limit with the 50,000-row dataset.
+- SM-1: Ten-second read: Total, shares and trend are visible without scrolling on a 1366 px wide screen.
+- SM-2: One source of numbers: The dashboard total equals the organization's headline total (ORG.FR-5) and the report summary total (FR-RPT-01) for the same period and data.
+- SM-3: Fast enough: The dashboard's data loads within NFR-02's limit with the 50,000-row dataset.
 
 ## Boundaries
 

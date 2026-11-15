@@ -48,9 +48,9 @@ Parent requirements this child delivers all or part of: R1, R4, R14, R17, R21, R
 
 ## Done when
 
-- SM-1: Exact totals.: The golden-dataset test (NFR-01) matches its expected totals by type and by month exactly.
-- SM-2: Every number explainable.: 100% of the emission calculations returned by the API carry their factor version, and 100% of source labels contain the demonstration disclaimer.
-- SM-3: Aggregates are fast.: The summary and monthly responses meet NFR-02.
+- SM-1: Exact totals: The golden-dataset test (NFR-01) matches its expected totals by type and by month exactly.
+- SM-2: Every number explainable: 100% of the emission calculations returned by the API carry their factor version, and 100% of source labels contain the demonstration disclaimer.
+- SM-3: Aggregates are fast: The summary and monthly responses meet NFR-02.
 
 ## Boundaries
 

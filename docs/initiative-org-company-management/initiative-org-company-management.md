@@ -42,8 +42,8 @@ Parent requirements this child delivers all or part of: R6, R12, R13, R14, R15, 
 
 ## Done when
 
-- SM-1: One-form onboarding.: A new organization, with its first period, is created in one form submission, after which its empty dashboard opens.
-- SM-2: Period integrity.: After any sequence of period adds and edits, no two periods of an organization overlap and no activity lies outside its period.
+- SM-1: One-form onboarding: A new organization, with its first period, is created in one form submission, after which its empty dashboard opens.
+- SM-2: Period integrity: After any sequence of period adds and edits, no two periods of an organization overlap and no activity lies outside its period.
 
 ## Boundaries
 

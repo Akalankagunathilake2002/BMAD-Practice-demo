@@ -51,8 +51,8 @@ A demo evaluator gets a working, seeded app from a clean machine, and every user
 
 ## Done when
 
-- SM-1: Clean-machine start.: Following the README on a clean machine gives a working, seeded app with no other steps.
-- SM-2: Repeatable seed.: Running the seed command a second time changes no rows.
+- SM-1: Clean-machine start: Following the README on a clean machine gives a working, seeded app with no other steps.
+- SM-2: Repeatable seed: Running the seed command a second time changes no rows.
 
 ## Boundaries
 
