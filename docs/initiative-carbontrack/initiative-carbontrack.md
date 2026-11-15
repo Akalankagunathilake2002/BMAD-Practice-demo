@@ -101,6 +101,19 @@ A sustainability manager goes from a new organization to an explainable, exporta
 - Won't (this release): FR-ORG-06: Delete or archive an organization.
 - Won't (this release): FR-ACT-07: Bulk import from CSV or Excel.
 - Won't (this release): FR-RPT-06: PDF export, and scheduled or emailed reports.
+- Shared: R1 is delivered in parts by M0, M3; each child's Requirements line says which part.
+- Shared: R4 is delivered in parts by M0, M3, M2; each child's Requirements line says which part.
+- Shared: R6 is delivered in parts by M0, M1; each child's Requirements line says which part.
+- Shared: R13 is delivered in parts by M0, M1; each child's Requirements line says which part.
+- Shared: R14 is delivered in parts by M1, M3; each child's Requirements line says which part.
+- Shared: R16 is delivered in parts by M1, M2; each child's Requirements line says which part.
+- Shared: R17 is delivered in parts by M3, M2; each child's Requirements line says which part.
+- Shared: R21 is delivered in parts by M3, M2; each child's Requirements line says which part.
+- Shared: R23 is delivered in parts by M3, M2; each child's Requirements line says which part.
+- Shared: R25 is delivered in parts by M3, M2, M5; each child's Requirements line says which part.
+- Shared: R31 is delivered in parts by M3, M2, M4, M5; each child's Requirements line says which part.
+- Shared: R33 is delivered in parts by M3, M2, M5; each child's Requirements line says which part.
+- Shared: R38 is delivered in parts by M0, M4; each child's Requirements line says which part.
 - Tracer path across children: sign in (M0) → create an organization and period (M1) → record an activity (M2), which M3 calculates → see it on the dashboard (M4) → report and export it (M5).
 
 ## References
@@ -113,6 +126,8 @@ A sustainability manager goes from a new organization to an explainable, exporta
 
 ## Notes
 
-- Open question: the six module PRDs list API and schema gaps for the architect (each `addendum.md`, Architecture notes); update the architecture before slicing epics.
+- Open question: the six module PRDs list API and schema gaps for the architect (each `addendum.md`, Architecture notes); update the architecture before slicing epics. Decision A also moves the activity table's owner from M2 to M3 (architecture §11.1).
 - Open question: Q-09 (Figma or HTML prototype) blocks CP4.
 - Decision: 2026-11-15, migrated from BMAD v6 to the v7 preview layout, one child initiative per module (docs/migration-v6-v7/migration-v6-v7.md).
+- Decision: 2026-11-15, A: M3 builds the activity table and the calculation core first and tests them directly; M2 builds what users do with activities on top and calls the calculation in the same save. Architecture §11.1 (activity table owned by M2) must be updated.
+- Decision: 2026-11-15, B: stories whose check needs a later module move to that module: demo-data seeding to M2, factor version 1 seeding to M3, headline figures to M3, the period-edit guard to M2. M0 keeps the seed command and demo users.
