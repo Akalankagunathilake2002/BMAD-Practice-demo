@@ -1,0 +1,49 @@
+# Child initiatives of initiative-carbontrack, in build order (architecture §11.3).
+# Table order is build order. `id` is permanent, never reused.
+
+[[initiative]]
+id = 1
+slug = "initiative-plt-platform-foundation"
+title = "Platform foundation (M0)"
+description = "One command starts a seeded app with demo sign-in, the app shell, and the shared error and page-state behavior every module uses."
+covers = ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11"]
+
+[[initiative]]
+id = 2
+slug = "initiative-org-company-management"
+title = "Company management (M1)"
+description = "Users create and switch organizations and keep their reporting periods correct, and no edit can leave an activity outside its period."
+covers = ["R12", "R13", "R14", "R15", "R16"]
+after = [{ initiative = 1, needs = "the app shell, sign-in and shared page states" }]
+
+[[initiative]]
+id = 3
+slug = "initiative-emi-emissions-calculation"
+title = "Emissions calculation (M3)"
+description = "Every saved activity has a current calculation with its factor version kept, factors are versioned, and totals by type and month are available to other modules."
+covers = ["R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30", "R31", "R32", "R33"]
+after = [{ initiative = 1, needs = "the platform foundation and seed command" }]
+
+[[initiative]]
+id = 4
+slug = "initiative-act-activity-data"
+title = "Activity data (M2)"
+description = "Users record, review, correct and delete activities; the unit follows the type, the period follows the date, and each row shows its emissions."
+covers = ["R17", "R18", "R19", "R20", "R21", "R22"]
+after = [{ initiative = 2, needs = "reporting periods to link activities to" }, { initiative = 3, needs = "calculation on every save" }]
+
+[[initiative]]
+id = 5
+slug = "initiative-dsh-dashboard"
+title = "Dashboard (M4)"
+description = "Summary cards, a monthly trend and a breakdown for the selected period, all from M3's aggregates, with text equivalents for every chart."
+covers = ["R34", "R35", "R36", "R37", "R38", "R39", "R40"]
+after = [{ initiative = 2, needs = "the organization's periods" }, { initiative = 3, needs = "totals and monthly aggregates" }]
+
+[[initiative]]
+id = 6
+slug = "initiative-rpt-reports"
+title = "Reports (M5)"
+description = "A period report with summary and line items, and full-precision CSV exports that carry the demonstration disclaimer."
+covers = ["R41", "R42", "R43", "R44", "R45"]
+after = [{ initiative = 3, needs = "totals and monthly aggregates" }, { initiative = 4, needs = "activity records for line items" }]

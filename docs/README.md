@@ -8,11 +8,11 @@ CarbonTrack is a mock carbon-management SaaS built to demonstrate an AI-assisted
 
 | Phase | Document | Status |
 |---|---|---|
-| 1 · Analysis | [Project brief](analysis/project-brief.md) | v0.1 |
-| 2 · Planning | [Master PRD](planning/prd.md) | **v0.2, approved (CP1)** |
-| 2 · Planning | [Master Architecture](planning/architecture.md) (includes module dependencies and folder structure) | **v0.2, approved (CP2)** |
-| 2 · Planning | [Assumptions & open questions](planning/assumptions-and-open-questions.md) | Living document |
-| 2 · Planning | [BMAD decision trail](planning/.memlog.md) | Append-only log |
+| 1 · Analysis | [Project brief](initiative-carbontrack/project-brief/project-brief.md) | v0.1 |
+| 2 · Planning | [Master PRD](initiative-carbontrack/prd-carbontrack/prd-carbontrack.md) | **v0.2, approved (CP1)** |
+| 2 · Planning | [Master Architecture](initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md) (includes module dependencies and folder structure) | **v0.2, approved (CP2)** |
+| 2 · Planning | [Assumptions & open questions](initiative-carbontrack/assumptions-and-open-questions.md) | Living document |
+| 2 · Planning | [BMAD decision trail](initiative-carbontrack/.memlog.md) | Append-only log |
 | 3 · Solutioning | Module PRDs: `planning/modules/` | Next (CP3) |
 | 3 · Solutioning | UX design specification and design system: `planning/` | Not started (CP4) |
 | 3 · Solutioning | Epics and stories: `planning/epics.md` | Not started (CP5) |
@@ -52,5 +52,5 @@ Possible decisions: **Approved**, **Approved with changes** (list the changes in
 ## Conventions
 
 - Requirement IDs: `BR-nn` business, `FR-<MODULE>-nn` functional, `NFR-nn` non-functional. Stories and tests reference these IDs for traceability.
-- Assumptions are `A-nn` and open questions are `Q-nn`. Both live in [assumptions-and-open-questions.md](planning/assumptions-and-open-questions.md).
+- Assumptions are `A-nn` and open questions are `Q-nn`. Both live in [assumptions-and-open-questions.md](initiative-carbontrack/assumptions-and-open-questions.md).
 - Each document carries a version and status in its header. When an approved document changes, its version is bumped and a change-log entry is added.
