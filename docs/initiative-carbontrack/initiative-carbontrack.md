@@ -8,6 +8,7 @@ sources:
   - docs/initiative-carbontrack/project-brief/project-brief.md
 companions:
   - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md
+  - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md
   - docs/initiative-carbontrack/assumptions-and-open-questions.md
 after: []
 risk: medium
@@ -119,14 +120,15 @@ A sustainability manager goes from a new organization to an explainable, exporta
 ## References
 
 - prd — docs/initiative-carbontrack/prd-carbontrack/prd-carbontrack.md, §5 Functional requirements
-- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, §11 Module boundaries and dependencies
+- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, AD-1–AD-18 (the contract; AD-2 ownership, AD-17 seams)
+- architecture detail — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md, for anything no AD covers
 - brief — docs/initiative-carbontrack/project-brief/project-brief.md
 - decisions — docs/initiative-carbontrack/assumptions-and-open-questions.md, Decision log
 - children — tickets/tickets.toml in this folder
 
 ## Notes
 
-- Open question: the six module PRDs list API and schema gaps for the architect (each `addendum.md`, Architecture notes); update the architecture before slicing epics. Decision A also moves the activity table's owner from M2 to M3 (architecture §11.1).
+- Decision: 2026-11-15, the architecture is a v7 spine (AD-1–AD-18) folding in every module addendum's architecture notes and Decision A; the CP2 document stays as its detail companion.
 - Open question: Q-09 (Figma or HTML prototype) blocks CP4.
 - Decision: 2026-11-15, migrated from BMAD v6 to the v7 preview layout, one child initiative per module (docs/migration-v6-v7/migration-v6-v7.md).
 - Decision: 2026-11-15, A: M3 builds the activity table and the calculation core first and tests them directly; M2 builds what users do with activities on top and calls the calculation in the same save. Architecture §11.1 (activity table owned by M2) must be updated.

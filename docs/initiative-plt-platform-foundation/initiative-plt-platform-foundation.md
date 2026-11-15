@@ -9,6 +9,7 @@ sources:
 companions:
   - docs/initiative-plt-platform-foundation/prd-plt-2026-11-14/prd-plt-2026-11-14.md
   - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md
+  - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md
   - docs/initiative-plt-platform-foundation/prd-plt-2026-11-14/addendum.md
 after: []
 risk: medium
@@ -63,7 +64,8 @@ A demo evaluator gets a working, seeded app from a clean machine, and every user
 - parent — docs/initiative-carbontrack/initiative-carbontrack.md, Requirements R1–R11
 - prd — docs/initiative-plt-platform-foundation/prd-plt-2026-11-14/prd-plt-2026-11-14.md, §4 Features (adopted companion: each FR's testable consequences)
 - addendum — docs/initiative-plt-platform-foundation/prd-plt-2026-11-14/addendum.md, Architecture notes
-- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, §11.1 Ownership
+- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, AD-1–AD-18 (the contract; AD-2 ownership, AD-17 seams)
+- architecture detail — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md, for anything no AD covers
 
 ## Notes
 

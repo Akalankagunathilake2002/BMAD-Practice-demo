@@ -9,6 +9,7 @@ sources:
 companions:
   - docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md
   - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md
+  - docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md
   - docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/addendum.md
 after: []
 risk: medium
@@ -31,7 +32,7 @@ Every reader can trace any emission figure to its activity, factor version and q
 - R3 (EMI.FR-3; parent R25): Every API response containing a calculation carries the factor version it used (value, unit, version, source label), and each history entry carries its own.
 - R4 (EMI.FR-4; parent R31): Every source label, shown or returned, contains the demonstration disclaimer, whatever the user typed.
 - R5 (EMI.FR-5; parent R26, R27): For one period or overall, M3 returns the total and each of the three activity types' emissions and share; a type with no data shows 0 and 0%, and a zero total raises no error.
-- R6 (EMI.FR-6; parent R28): For one period, M3 returns totals per calendar month of activity date, overall and by type, oldest first, only for months with activity, within NFR-02's response time.
+- R6 (EMI.FR-6; parent R28): For one period, M3 returns totals for every calendar month of the period as YYYY-MM, overall and by type, oldest first, with zeros for months without activity, within NFR-02's response time (architecture AD-9).
 - R7 (EMI.FR-7; parent R29): A user adds a factor version, value 0 to 999,999.999999 with at most 6 decimals and optional source text up to 100 characters, that becomes active at once for every organization; older versions stay unchanged and undeletable; a simultaneous add for the same type gets a conflict error.
 - R8 (EMI.FR-8, Should; parent R30, R1): The Emission Factors page, behind M0's sidebar entry, shows each type's active factor and its version history newest first with the date added, the add-version form and the disclaimer.
 - R9 (EMI.FR-9, Should; parent R32): Before recalculating an organization the user sees how many calculations use an older factor and confirms; all are replaced in one all-or-nothing step and the user sees how many changed, or "All results are up to date" when none are out of date.
@@ -65,11 +66,14 @@ Every reader can trace any emission figure to its activity, factor version and q
 - parent — docs/initiative-carbontrack/initiative-carbontrack.md, Requirements R23–R33
 - prd — docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/prd-emi-2026-11-14.md, §4 Features (adopted companion: each FR's testable consequences)
 - addendum — docs/initiative-emi-emissions-calculation/prd-emi-2026-11-14/addendum.md, Architecture notes
-- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, §11.1 Ownership
+- architecture — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack.md, AD-1–AD-18 (the contract; AD-2 ownership, AD-17 seams)
+- architecture detail — docs/initiative-carbontrack/architecture-carbontrack/architecture-carbontrack-detail.md, for anything no AD covers
 
 ## Notes
 
-- Open question: the architecture must add a read-only out-of-date count (R9), a source-text field (R7), the date each factor version was added (R8), and move the activity table's owner from M2 to M3 (R11, Decision A); owner: architect, before CP5.
+- Source conflict: EMI.FR-6 — the module PRD returns only months with data; the ticket returns every month of the period.
+- Decision: 2026-11-15, months are filled once on the server (architecture AD-9); R6 updated, the PRD stays as written.
+- Decision: 2026-11-15, the architecture spine covers these: out-of-date count (AD-12), source text and created_at (AD-6), activity table schema owner M3 with rows written by M2 (AD-2).
 - Decision: 2026-11-15, the PRD's open question on the sidebar link vs the Should page is settled by M0 R1: the entry is hidden until the page exists.
 - Decision: 2026-11-15, A: M3 builds the activity table and the calculation core first and tests them directly; M2 builds what users do with activities on top and calls the calculation in the same save. Architecture §11.1 (activity table owned by M2) must be updated.
 - Decision: 2026-11-15, B: stories whose check needs a later module move to that module: demo-data seeding to M2, factor version 1 seeding to M3, headline figures to M3, the period-edit guard to M2. M0 keeps the seed command and demo users.
