@@ -1,3 +1,9 @@
+---
+type: prd
+title: "CarbonTrack — Master Product Requirements Document"
+created: 2026-11-10
+---
+
 # CarbonTrack — Master Product Requirements Document
 
 | | |

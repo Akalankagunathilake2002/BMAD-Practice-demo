@@ -1,3 +1,9 @@
+---
+type: architecture
+title: "CarbonTrack — Master Architecture"
+created: 2026-11-10
+---
+
 # CarbonTrack — Master Architecture
 
 | | |

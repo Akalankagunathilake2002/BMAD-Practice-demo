@@ -1,3 +1,9 @@
+---
+type: brief
+title: "CarbonTrack — Project Brief (Phase 1: Analysis)"
+created: 2026-11-10
+---
+
 # CarbonTrack — Project Brief (Phase 1: Analysis)
 
 | | |
